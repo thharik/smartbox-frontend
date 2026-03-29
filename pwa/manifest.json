@@ -1,0 +1,19 @@
+{
+  "name": "SmartBox",
+  "short_name": "SmartBox",
+  "description": "Seu streaming pessoal de filmes, séries e animes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#141414",
+  "theme_color": "#141414",
+  "orientation": "any",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [
+    { "src": "screenshot.png", "sizes": "1280x720", "type": "image/png" }
+  ],
+  "categories": ["entertainment"],
+  "lang": "pt-BR"
+}

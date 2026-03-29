@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro - SmartBox</title>
+  <link rel="stylesheet" href="auth.css">
+  <link rel="manifest" href="pwa/manifest.json">
+  <meta name="theme-color" content="#141414">
+  <link rel="apple-touch-icon" href="pwa/icon-192.png">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-overlay"></div>
+
+    <div class="auth-container single-column">
+      <div class="auth-right full-width">
+        <div class="auth-box">
+          <h2>Criar conta</h2>
+
+          <!--
+            O formulário chama /auth/register no backend
+            Se cadastro ok → redireciona para login.html
+            Se erro (ex: e-mail já existe) → mostra em #cadastroMensagem
+          -->
+          <form id="cadastroForm">
+            <div class="input-group">
+              <label for="cadastroEmail">E-mail</label>
+              <input type="email" id="cadastroEmail" placeholder="Digite seu e-mail" required>
+            </div>
+            <div class="input-group">
+              <label for="cadastroSenha">Senha</label>
+              <input type="password" id="cadastroSenha" placeholder="Mínimo 6 caracteres" required>
+            </div>
+            <button type="submit" class="main-btn">Cadastrar</button>
+          </form>
+
+          <p id="cadastroMensagem" class="mensagem"></p>
+
+          <div class="auth-links">
+            <span>Já tem conta?</span>
+            <a href="login.html">Entrar</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="pwa/register-sw.js"></script>
+</body>
+</html>

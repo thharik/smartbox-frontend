@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tvxbox</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="pwa/manifest.json">
+  <meta name="theme-color" content="#141414">
+  <link rel="apple-touch-icon" href="pwa/icon-192.png">
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">SMARTBOX</div>
+
+    <button class="menu-toggle" id="menuToggle" aria-label="Menu" aria-expanded="false">☰</button>
+
+    <nav class="main-nav" id="mainNav">
+      <a href="index.html">Início</a>
+      <a href="ao-vivo.html">Ao Vivo</a>
+      <a href="youtube.html">YouTube</a>
+    </nav>
+
+    <div class="header-right">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Buscar...">
+      </div>
+      <div class="user-box">
+        <span id="usuarioNome"></span>
+        <button id="btnSair" type="button">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="toolbar">
+      <div class="filtros">
+        <button class="filter-btn active" data-filter="todos">Todos</button>
+        <button class="filter-btn" data-filter="Filme">Filmes</button>
+        <button class="filter-btn" data-filter="Série">Séries</button>
+        <button class="filter-btn" data-filter="Anime">Animes</button>
+      </div>
+    </section>
+
+    <section id="continuarBox" class="continuar-box hidden">
+      <div class="section-header"><h2>Continuar assistindo</h2></div>
+      <div id="continuarCard"></div>
+    </section>
+
+    <section id="favoritosBox" class="favoritos-box hidden">
+      <div class="section-header"><h2>Minha lista</h2></div>
+      <div id="favoritosRow" class="poster-row"></div>
+    </section>
+
+    <section>
+      <div class="section-header"><h2>Em destaque</h2></div>
+      <div id="rowDestaques" class="poster-row"></div>
+    </section>
+
+    <section>
+      <div class="section-header"><h2>Animes</h2></div>
+      <div id="rowAnimes" class="poster-row"></div>
+    </section>
+
+    <section>
+      <div class="section-header"><h2>Séries</h2></div>
+      <div id="rowSeries" class="poster-row"></div>
+    </section>
+
+    <section>
+      <div class="section-header"><h2>Ao vivo</h2></div>
+      <div id="rowAoVivo" class="poster-row"></div>
+    </section>
+
+    <section>
+      <div class="section-header"><h2>YouTube</h2></div>
+      <div id="rowYoutube" class="poster-row"></div>
+    </section>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script src="pwa/register-sw.js"></script>
+</body>
+</html>

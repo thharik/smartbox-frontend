@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - SmartBox</title>
+  <link rel="stylesheet" href="auth.css">
+  <link rel="manifest" href="pwa/manifest.json">
+  <meta name="theme-color" content="#141414">
+  <link rel="apple-touch-icon" href="pwa/icon-192.png">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-overlay"></div>
+ 
+    <div class="auth-container">
+ 
+      <!-- Lado esquerdo: marca + Pix de apoio -->
+      <div class="auth-left">
+        <div class="brand-box">
+          <h1>SMARTBOX</h1>
+          <p class="brand-subtitle">Filmes, séries e animes em uma experiência simples e bonita.</p>
+        </div>
+ 
+        <div class="support-card">
+          <h2>Ajude a melhorar o app</h2>
+          <p class="support-text">
+            O valor arrecadado será usado para melhorar o app, adicionar novidades,
+            corrigir problemas e deixar a experiência cada vez melhor para todos.
+          </p>
+ 
+          <div class="pix-box">
+            <div class="pix-qr">
+              <img src="assets/posteris/WhatsApp Image 2026-03-25 at 10.40.19.jpeg" alt="QR Code Pix" id="pixQrImage">
+            </div>
+ 
+            <div class="pix-info">
+              <p class="pix-title">Pagamento via Pix</p>
+              <p class="pix-description">
+                Aponte a câmera do seu banco para o QR Code ou copie a chave Pix abaixo.
+              </p>
+ 
+              <div class="pix-code-box">
+                <input type="text" id="pixCode" readonly value="82408b72-9d4f-4c2f-8391-96b789f18ea8">
+                <button type="button" id="copyPixBtn">Copiar Pix</button>
+              </div>
+ 
+              <p class="pix-note">
+                Você escolhe o valor que quer pagar. Este app foi criado para ser acessível a todos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- Lado direito: formulário de login -->
+      <div class="auth-right">
+        <div class="auth-box">
+          <h2>Entrar</h2>
+ 
+          <form id="loginForm">
+            <div class="input-group">
+              <label for="loginEmail">E-mail</label>
+              <input type="email" id="loginEmail" placeholder="Digite seu e-mail" required>
+            </div>
+            <div class="input-group">
+              <label for="loginSenha">Senha</label>
+              <input type="password" id="loginSenha" placeholder="Digite sua senha" required>
+            </div>
+            <button type="submit" class="main-btn">Entrar</button>
+          </form>
+ 
+          <p id="loginMensagem" class="mensagem"></p>
+ 
+          <div class="auth-links">
+            <span>Ainda não tem conta?</span>
+            <a href="cadastro.html">Criar conta</a>
+          </div>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+ 
+  <script src="auth.js"></script>
+  <script src="pwa/register-sw.js"></script>
+</body>
+</html>
+ 

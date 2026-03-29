@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube - SmartBox</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="pwa/manifest.json">
+  <meta name="theme-color" content="#141414">
+  <link rel="apple-touch-icon" href="pwa/icon-192.png">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">SMARTBOX</div>
+    <button class="menu-toggle" id="menuToggle" aria-label="Menu" aria-expanded="false">☰</button>
+    <nav class="main-nav" id="mainNav">
+      <a href="index.html">Início</a>
+      <a href="ao-vivo.html">Ao Vivo</a>
+      <a href="youtube.html">YouTube</a>
+    </nav>
+    <div class="header-right">
+      <div class="user-box">
+        <span id="usuarioNome"></span>
+        <button id="btnSair" type="button">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="section-title">YouTube</h1>
+
+    <!--
+      Cards criados pelo script.js a partir de catalogo.youtube no data.js
+      Para adicionar vídeo: coloque o ID do YouTube no campo "embed"
+      Exemplo: se a URL for youtube.com/watch?v=dQw4w9WgXcQ
+               o embed é: "dQw4w9WgXcQ"
+    -->
+    <div id="youtubeGrid" class="poster-row"></div>
+
+    <!-- Player do YouTube — aparece quando o usuário clica num vídeo -->
+    <div id="youtubePlayerBox" class="youtube-player-box hidden">
+      <iframe
+        id="youtubeFrame"
+        width="100%"
+        height="500"
+        frameborder="0"
+        allowfullscreen
+        allow="autoplay; encrypted-media"
+      ></iframe>
+    </div>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script src="pwa/register-sw.js"></script>
+</body>
+</html>

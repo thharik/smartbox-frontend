@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalhe - SmartBox</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- PWA: deixa o site instalável como app -->
+  <link rel="manifest" href="pwa/manifest.json">
+  <meta name="theme-color" content="#141414">
+  <link rel="apple-touch-icon" href="pwa/icon-192.png">
+</head>
+<body>
+
+  <!-- Barra do topo com logo, menu e botão sair -->
+  <header class="topbar">
+    <div class="logo">SMARTBOX</div>
+
+    <!-- Botão hambúrguer (só aparece no celular) -->
+    <button class="menu-toggle" id="menuToggle" aria-label="Menu" aria-expanded="false">☰</button>
+
+    <!-- Menu de navegação -->
+    <nav class="main-nav" id="mainNav">
+      <a href="index.html">Início</a>
+      <a href="ao-vivo.html">Ao Vivo</a>
+      <a href="youtube.html">YouTube</a>
+    </nav>
+
+    <div class="header-right">
+      <div class="user-box">
+        <!-- Nome do perfil ativo aparece aqui automaticamente -->
+        <span id="usuarioNome"></span>
+        <button id="btnSair" type="button">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Poster + título + descrição do conteúdo -->
+    <!-- Preenchido automaticamente pelo script.js com base no ?id= da URL -->
+    <section id="detalheConteudo" class="detalhe-box"></section>
+
+    <!-- Botões Assistir e Favoritar -->
+    <section class="detalhe-acoes" id="detalheAcoes">
+      <button id="btnAssistirDetalhe" class="btn-detalhe btn-play" type="button">
+        ▶ Assistir
+      </button>
+      <button id="btnFavoritoDetalhe" class="btn-detalhe btn-fav" type="button">
+        + Minha lista
+      </button>
+    </section>
+
+    <!-- Seletor de temporada (só aparece para séries) -->
+    <section class="temporada-box" id="temporadaBox">
+      <label for="temporadaSelect">Temporada:</label>
+      <select id="temporadaSelect"></select>
+    </section>
+
+    <!-- Grade de episódios (preenchida pelo script.js) -->
+    <section>
+      <div class="section-header"><h2>Episódios</h2></div>
+      <div id="episodiosGrid" class="episodios-grid"></div>
+    </section>
+
+  </main>
+
+  <!-- data.js: catálogo local (fallback se o servidor estiver offline) -->
+  <script src="data.js"></script>
+  <!-- script.js: toda a lógica do app -->
+  <script src="script.js"></script>
+  <!-- PWA: registra o service worker para funcionar offline e como app instalável -->
+  <script src="pwa/register-sw.js"></script>
+</body>
+</html>
