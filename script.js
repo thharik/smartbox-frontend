@@ -5,7 +5,7 @@ const ls = {
   del: k => localStorage.removeItem(k),
 };
 
-const API = "";  // vazio = mesmo domínio
+const API = "https://tvxbox-backend-1.onrender.com";
 
 function getToken()    { return ls.get("sb_token"); }
 function getPerfilId() { return ls.get("sb_perfil_id"); }

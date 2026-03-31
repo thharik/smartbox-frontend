@@ -37,7 +37,7 @@ if (loginForm) {
     msg.textContent = "Entrando...";
 
     try {
-      const r = await fetch("/auth/login", {
+      const r = await fetch("https://tvxbox-backend-1.onrender.com/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, senha }),
@@ -72,7 +72,7 @@ if (cadastroForm) {
     msg.textContent = "Criando conta...";
 
     try {
-      const r = await fetch("/auth/register", {
+      const r = await fetch("https://tvxbox-backend-1.onrender.com/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, senha }),
