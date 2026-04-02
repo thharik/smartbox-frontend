@@ -56,10 +56,9 @@ async function carregarCatalogo() {
       return;
     }
   }
-  // fallback offline: cache local, depois data.js legado
   catalogoData = ls.get("sb_catalogo_cache");
   if (!catalogoData && typeof catalogo !== "undefined") catalogoData = catalogo;
-  if (!catalogoData) catalogoData = { destaques:[], animes:[], series:[], aoVivo:[], youtube:[] };
+  if (!catalogoData) catalogoData = { destaques:[], animes:[], series:[], aoVivo:[], mangas:[], aulas:[] };
 }
 
 async function carregarUserData() {
@@ -73,13 +72,10 @@ async function carregarUserData() {
 }
 
 // ─── Múltiplos perfis ─────────────────────────────────────────────────────────
-const AVATARES = ["🎬","🎮","🎵","🌟","🦊","🐼","🚀","👾"];
-
 async function mostrarTelaPerfis() {
   const perfis = await apiFetch("/perfis", { headers: headers() });
   if (!perfis) return;
 
-  // Se só tem 1 perfil e sem PIN, entra direto
   if (perfis.length === 1 && !perfis[0].tem_pin) {
     selecionarPerfil(perfis[0]);
     return;
@@ -117,12 +113,8 @@ async function mostrarTelaPerfis() {
       <span style="color:#ccc;font-size:14px">${p.nome}</span>
       ${p.tem_pin ? '<span style="color:#777;font-size:12px">🔒 PIN</span>' : ""}
     `;
-    btn.addEventListener("mouseenter", () =>
-      btn.querySelector(".perfil-avatar").style.borderColor = "#e50914"
-    );
-    btn.addEventListener("mouseleave", () =>
-      btn.querySelector(".perfil-avatar").style.borderColor = "transparent"
-    );
+    btn.addEventListener("mouseenter", () => btn.querySelector(".perfil-avatar").style.borderColor = "#e50914");
+    btn.addEventListener("mouseleave", () => btn.querySelector(".perfil-avatar").style.borderColor = "transparent");
     btn.addEventListener("click", () => {
       if (p.tem_pin) pedirPin(p, overlay);
       else { selecionarPerfil(p); overlay.remove(); }
@@ -130,7 +122,6 @@ async function mostrarTelaPerfis() {
     grid.appendChild(btn);
   });
 
-  // Botão criar novo perfil
   if (perfis.length < 4) {
     const btnNovo = document.createElement("button");
     btnNovo.style.cssText = `
@@ -148,10 +139,7 @@ async function mostrarTelaPerfis() {
     grid.appendChild(btnNovo);
   }
 
-  overlay.querySelector("#btnGerenciarPerfis").addEventListener("click", () =>
-    abrirModalCriarPerfil(overlay)
-  );
-
+  overlay.querySelector("#btnGerenciarPerfis").addEventListener("click", () => abrirModalCriarPerfil(overlay));
   document.body.appendChild(overlay);
 }
 
@@ -168,16 +156,11 @@ function pedirPin(perfil, overlay) {
       text-align:center;padding:12px 20px;border-radius:10px;width:140px;letter-spacing:8px;
     ">
     <div style="display:flex;gap:10px">
-      <button id="btnConfirmarPin" style="
-        background:#e50914;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-size:15px;
-      ">Entrar</button>
-      <button id="btnCancelarPin" style="
-        background:#222;color:#aaa;border:1px solid #333;padding:12px 24px;border-radius:8px;cursor:pointer;
-      ">Cancelar</button>
+      <button id="btnConfirmarPin" style="background:#e50914;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-size:15px">Entrar</button>
+      <button id="btnCancelarPin"  style="background:#222;color:#aaa;border:1px solid #333;padding:12px 24px;border-radius:8px;cursor:pointer">Cancelar</button>
     </div>
     <p id="pinErro" style="color:#ff6b6b;font-size:14px;min-height:18px"></p>
   `;
-
   modal.querySelector("#btnCancelarPin").addEventListener("click", () => modal.remove());
   modal.querySelector("#btnConfirmarPin").addEventListener("click", async () => {
     const pin = modal.querySelector("#pinInput").value;
@@ -187,7 +170,6 @@ function pedirPin(perfil, overlay) {
     if (ok?.ok) { selecionarPerfil(perfil); overlay.remove(); }
     else modal.querySelector("#pinErro").textContent = "PIN incorreto. Tente novamente.";
   });
-
   overlay.appendChild(modal);
 }
 
@@ -214,28 +196,25 @@ function abrirModalCriarPerfil(overlay) {
         <input type="checkbox" id="infantilCheck"> Perfil infantil
       </label>
       <div style="display:flex;gap:10px">
-        <button id="btnSalvarPerfil" style="flex:1;background:#e50914;color:#fff;border:none;padding:13px;border-radius:8px;cursor:pointer;font-size:15px">Criar</button>
-        <button id="btnFecharModalPerfil" style="background:#222;color:#aaa;border:1px solid #333;padding:13px 18px;border-radius:8px;cursor:pointer">Cancelar</button>
+        <button id="btnSalvarPerfil"       style="flex:1;background:#e50914;color:#fff;border:none;padding:13px;border-radius:8px;cursor:pointer;font-size:15px">Criar</button>
+        <button id="btnFecharModalPerfil"  style="background:#222;color:#aaa;border:1px solid #333;padding:13px 18px;border-radius:8px;cursor:pointer">Cancelar</button>
       </div>
       <p id="perfilModalErro" style="color:#ff6b6b;font-size:13px;margin-top:10px;min-height:16px"></p>
     </div>
   `;
-
   modal.querySelector("#btnFecharModalPerfil").addEventListener("click", () => modal.remove());
   modal.querySelector("#btnSalvarPerfil").addEventListener("click", async () => {
-    const nome    = modal.querySelector("#nomePerfilInput").value.trim();
-    const pin     = modal.querySelector("#pinPerfilInput").value;
-    const infantil= modal.querySelector("#infantilCheck").checked;
+    const nome     = modal.querySelector("#nomePerfilInput").value.trim();
+    const pin      = modal.querySelector("#pinPerfilInput").value;
+    const infantil = modal.querySelector("#infantilCheck").checked;
     if (!nome) { modal.querySelector("#perfilModalErro").textContent = "Nome obrigatório"; return; }
-
     const res = await apiFetch("/perfis", {
       method: "POST", headers: headers(),
-      body: JSON.stringify({ nome, pin: pin||undefined, infantil })
+      body: JSON.stringify({ nome, pin: pin || undefined, infantil })
     });
     if (res?.id) { modal.remove(); overlay.remove(); mostrarTelaPerfis(); }
     else modal.querySelector("#perfilModalErro").textContent = res?.mensagem || "Erro ao criar perfil";
   });
-
   overlay.appendChild(modal);
 }
 
@@ -250,7 +229,6 @@ let previewEl = null;
 
 function criarPreview(item, cardEl) {
   removerPreview();
-
   previewEl = document.createElement("div");
   previewEl.className = "card-preview";
 
@@ -265,26 +243,24 @@ function criarPreview(item, cardEl) {
     <div class="preview-info">
       <strong>${item.titulo}</strong>
       <div class="preview-meta">
-        <span class="preview-tipo">${item.tipo||""}</span>
+        <span class="preview-tipo">${item.tipo || ""}</span>
         ${item.classificacao ? `<span class="preview-class">${item.classificacao}</span>` : ""}
         ${item.ano ? `<span>${item.ano}</span>` : ""}
       </div>
-      ${item.descricao ? `<p class="preview-desc">${item.descricao.slice(0,100)}${item.descricao.length>100?"…":""}</p>` : ""}
+      ${item.descricao ? `<p class="preview-desc">${item.descricao.slice(0, 100)}${item.descricao.length > 100 ? "…" : ""}</p>` : ""}
     </div>
   `;
-
   document.body.appendChild(previewEl);
   posicionarPreview(cardEl);
 }
 
 function posicionarPreview(cardEl) {
   if (!previewEl) return;
-  const rect = cardEl.getBoundingClientRect();
-  const scrollY = window.scrollY;
-  const pw = 260;
-  let left = rect.left + (rect.width - pw) / 2;
-  left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
-  let top = rect.bottom + scrollY + 6;
+  const rect  = cardEl.getBoundingClientRect();
+  const pw    = 260;
+  let left    = rect.left + (rect.width - pw) / 2;
+  left        = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+  const top   = rect.bottom + window.scrollY + 6;
   previewEl.style.cssText = `left:${left}px;top:${top}px;width:${pw}px;`;
 }
 
@@ -302,19 +278,16 @@ function criarCard(item, onClick) {
 
   card.innerHTML = `
     <img src="${item.poster || "assets/posters/placeholder.jpg"}" alt="${item.titulo}" loading="lazy">
-    <div class="info"><h3>${item.titulo}</h3><p>${item.tipo||""}</p></div>
+    <div class="info"><h3>${item.titulo}</h3><p>${item.tipo || ""}</p></div>
   `;
-
   card.addEventListener("click", onClick);
 
-  // Preview hover (apenas desktop)
   if (window.matchMedia("(hover:hover)").matches) {
     card.addEventListener("mouseenter", () => {
       previewTimeout = setTimeout(() => criarPreview(item, card), 500);
     });
     card.addEventListener("mouseleave", removerPreview);
   }
-
   return card;
 }
 
@@ -323,24 +296,27 @@ function renderRow(idContainer, lista, tipoClique) {
   const container = document.getElementById(idContainer);
   if (!container) return;
   container.innerHTML = "";
-
   lista.forEach(item => {
-    let acao = () => {
-      const cat = idContainer;
-      window.location.href = `detalhe.html?id=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(cat)}`;
-    };
-    if (tipoClique === "aoVivo")  acao = () => item.video ? (window.location.href=`assistir.html?canal=${encodeURIComponent(item.id)}`) : alert("Vídeo não configurado.");
-    if (tipoClique === "youtube") acao = () => abrirYoutube(item);
+    let acao = () =>
+      window.location.href = `detalhe.html?id=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(idContainer)}`;
+    if (tipoClique === "aoVivo")
+      acao = () => item.video
+        ? (window.location.href = `assistir.html?canal=${encodeURIComponent(item.id)}`)
+        : alert("Vídeo não configurado.");
     container.appendChild(criarCard(item, acao));
   });
 }
 
 function buscarListaPorCategoria(cat) {
   if (!catalogoData) return [];
-  if (cat === "rowDestaques") return catalogoData.destaques || [];
-  if (cat === "rowAnimes")    return catalogoData.animes    || [];
-  if (cat === "rowSeries")    return catalogoData.series    || [];
-  return [];
+  const mapa = {
+    rowDestaques: "destaques",
+    rowAnimes:    "animes",
+    rowSeries:    "series",
+    rowAulas:     "aulas",
+    rowMangas:    "mangas",
+  };
+  return catalogoData[mapa[cat]] || [];
 }
 
 // ─── Favoritos ────────────────────────────────────────────────────────────────
@@ -354,7 +330,6 @@ async function alternarFavorito(itemId) {
     if (res.favoritado) userData.favoritos.push(itemId);
     else userData.favoritos = userData.favoritos.filter(x => x !== itemId);
   } else {
-    // fallback offline: localStorage
     const favs = ls.get("sb_fav_cache") || [];
     const idx = favs.indexOf(itemId);
     if (idx === -1) favs.push(itemId); else favs.splice(idx, 1);
@@ -378,17 +353,20 @@ function renderFavoritos() {
   if (!box || !row) return;
 
   const todos = [
-    ...(catalogoData?.destaques||[]),
-    ...(catalogoData?.animes||[]),
-    ...(catalogoData?.series||[]),
+    ...(catalogoData?.destaques || []),
+    ...(catalogoData?.animes    || []),
+    ...(catalogoData?.series    || []),
+    ...(catalogoData?.aulas     || []),
   ];
   const itens = todos.filter(i => userData.favoritos.includes(i.id));
   row.innerHTML = "";
   if (!itens.length) { box.classList.add("hidden"); return; }
   box.classList.remove("hidden");
   itens.forEach(item => {
-    const cat = (catalogoData.destaques||[]).find(x=>x.id===item.id) ? "rowDestaques"
-              : (catalogoData.animes||[]).find(x=>x.id===item.id)    ? "rowAnimes" : "rowSeries";
+    const cat = (catalogoData.destaques || []).find(x => x.id === item.id) ? "rowDestaques"
+              : (catalogoData.animes    || []).find(x => x.id === item.id) ? "rowAnimes"
+              : (catalogoData.aulas     || []).find(x => x.id === item.id) ? "rowAulas"
+              : "rowSeries";
     row.appendChild(criarCard(item, () =>
       window.location.href = `detalhe.html?id=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(cat)}`
     ));
@@ -397,7 +375,6 @@ function renderFavoritos() {
 
 // ─── Salvar progresso ─────────────────────────────────────────────────────────
 async function salvarProgresso(payload) {
-  // Tenta servidor; se offline guarda no localStorage para sincronizar depois
   const res = await apiFetch("/progresso", {
     method: "POST", headers: headers(true), body: JSON.stringify(payload)
   });
@@ -408,19 +385,16 @@ async function salvarProgresso(payload) {
   }
 }
 
-// Sincroniza fila offline quando voltar a ficar online
 window.addEventListener("online", async () => {
   const fila = ls.get("sb_fila_sync") || [];
   if (!fila.length) return;
   for (const item of fila) {
-    await apiFetch("/progresso", {
-      method: "POST", headers: headers(true), body: JSON.stringify(item)
-    });
+    await apiFetch("/progresso", { method: "POST", headers: headers(true), body: JSON.stringify(item) });
   }
   ls.del("sb_fila_sync");
 });
 
-// ─── Continuar assistindo ────────────────────────────────────────────────────
+// ─── Continuar assistindo ─────────────────────────────────────────────────────
 function renderContinuarAssistindo() {
   const box  = document.getElementById("continuarBox");
   const card = document.getElementById("continuarCard");
@@ -431,15 +405,19 @@ function renderContinuarAssistindo() {
 
   card.innerHTML = "";
   lista.forEach(item => {
-    const pct = item.duration > 0 ? Math.min(100, Math.round((item.current_time / item.duration) * 100)) : 0;
-    const link = item.link || `assistir.html?serie=${encodeURIComponent(item.conteudo_id || item.itemId)}&episodio=${encodeURIComponent(item.episodio_id)}&autoplay=1`;
+    const pct  = item.duration > 0 ? Math.min(100, Math.round((item.current_time / item.duration) * 100)) : 0;
+    const cat  = (catalogoData?.destaques || []).find(x => x.id === item.conteudo_id) ? "rowDestaques"
+               : (catalogoData?.animes    || []).find(x => x.id === item.conteudo_id) ? "rowAnimes"
+               : (catalogoData?.aulas     || []).find(x => x.id === item.conteudo_id) ? "rowAulas"
+               : "rowSeries";
+    const link = `assistir.html?serie=${encodeURIComponent(item.conteudo_id)}&categoria=${encodeURIComponent(cat)}&temporada=1&episodio=${encodeURIComponent(item.episodio_id)}&autoplay=1`;
     const bloco = document.createElement("div");
     bloco.className = "continuar-card";
     bloco.innerHTML = `
-      <img src="${item.poster||item.capa||""}" alt="${item.titulo}">
+      <img src="${item.poster || item.capa || ""}" alt="${item.titulo}">
       <div class="continuar-info">
         <h3>${item.titulo}</h3>
-        <p>${item.ep_titulo||item.descricao||""}</p>
+        <p>${item.ep_titulo || ""}</p>
         <a href="${link}">▶ Continuar</a>
         <div class="continuar-progress"><div class="continuar-progress-fill" style="width:${pct}%"></div></div>
       </div>
@@ -452,15 +430,99 @@ function renderContinuarAssistindo() {
 // ─── Home ─────────────────────────────────────────────────────────────────────
 function renderHome() {
   if (!catalogoData) return;
-  renderRow("rowDestaques", catalogoData.destaques||[], "detalhe");
-  renderRow("rowAnimes",    catalogoData.animes||[],    "detalhe");
-  renderRow("rowSeries",    catalogoData.series||[],    "detalhe");
-  renderRow("rowAoVivo",    catalogoData.aoVivo||[],    "aoVivo");
-  renderRow("rowYoutube",   catalogoData.youtube||[],   "youtube");
+  renderRow("rowDestaques", catalogoData.destaques || [], "detalhe");
+  renderRow("rowAnimes",    catalogoData.animes    || [], "detalhe");
+  renderRow("rowSeries",    catalogoData.series    || [], "detalhe");
+  renderRow("rowAoVivo",    catalogoData.aoVivo    || [], "aoVivo");
+  // YouTube removido
   iniciarBusca();
   iniciarFiltros();
   renderContinuarAssistindo();
   renderFavoritos();
+}
+
+// ─── Páginas específicas ──────────────────────────────────────────────────────
+function renderAulasPage() {
+  if (!document.getElementById("rowAulas")) return;
+  renderRow("rowAulas", catalogoData?.aulas || [], "detalhe");
+}
+
+function renderMangasPage() {
+  const row = document.getElementById("rowMangas");
+  if (!row) return;
+  const mangas = catalogoData?.mangas || [];
+  mangas.forEach(manga => {
+    const card = criarCard(manga, () => abrirCapitulosManga(manga));
+    row.appendChild(card);
+  });
+}
+
+async function abrirCapitulosManga(manga) {
+  const capBox   = document.getElementById("capitulosBox");
+  const capGrid  = document.getElementById("capitulosGrid");
+  const titulo   = document.getElementById("mangaSelecionadoTitulo");
+  const btnVoltar= document.getElementById("btnVoltarMangas");
+  if (!capBox || !capGrid) return;
+
+  titulo.textContent = manga.titulo;
+  capGrid.innerHTML  = "<p style='color:#888'>Carregando capítulos...</p>";
+  capBox.classList.remove("hidden");
+  window.scrollTo({ top: capBox.offsetTop - 80, behavior: "smooth" });
+
+  // Busca capítulos do back-end
+  const capitulos = await apiFetch(`/mangas/${manga.id}/capitulos`, { headers: headers() });
+  // Fallback: capítulos que vieram no catálogo
+  const lista = capitulos || manga.capitulos || [];
+
+  capGrid.innerHTML = "";
+  if (!lista.length) {
+    capGrid.innerHTML = "<p style='color:#888'>Nenhum capítulo disponível.</p>";
+    return;
+  }
+
+  lista.forEach(cap => {
+    const card = document.createElement("div");
+    card.className = "capitulo-card";
+    card.innerHTML = `
+      <h3>Cap. ${cap.numero}</h3>
+      <p>${cap.titulo}</p>
+    `;
+    card.addEventListener("click", () => abrirLeitorManga(cap, manga));
+    capGrid.appendChild(card);
+  });
+
+  btnVoltar.addEventListener("click", () => {
+    capBox.classList.add("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, { once: true });
+}
+
+function abrirLeitorManga(cap, manga) {
+  const overlay = document.getElementById("mangaReaderOverlay");
+  const frame   = document.getElementById("readerFrame");
+  const titulo  = document.getElementById("readerTitulo");
+  const btnFechar = document.getElementById("btnReaderFechar");
+  if (!overlay || !frame) return;
+
+  // O PDF é servido pela rota /video/pdf/:fileName do back-end
+  const pdfUrl = cap.pdfUrl?.startsWith("http")
+    ? cap.pdfUrl
+    : `${API}/video/pdf/${cap.pdfUrl}`;
+
+  titulo.textContent = `${manga.titulo} — Cap. ${cap.numero}: ${cap.titulo}`;
+  frame.src = pdfUrl;
+  overlay.classList.add("ativo");
+  document.body.style.overflow = "hidden";
+
+  // Tenta entrar em tela cheia
+  overlay.requestFullscreen?.().catch(() => {});
+
+  btnFechar.onclick = () => {
+    overlay.classList.remove("ativo");
+    frame.src = "";
+    document.body.style.overflow = "";
+    if (document.fullscreenElement) document.exitFullscreen?.();
+  };
 }
 
 // ─── Detalhe ─────────────────────────────────────────────────────────────────
@@ -476,15 +538,15 @@ function renderDetalhe() {
   if (!item) { box.innerHTML = "<h1>Não encontrado.</h1>"; return; }
 
   box.innerHTML = `
-    <img src="${item.poster||""}" alt="${item.titulo}">
-    <div><h1>${item.titulo}</h1><p>${item.descricao||""}</p></div>
+    <img src="${item.poster || ""}" alt="${item.titulo}">
+    <div><h1>${item.titulo}</h1><p>${item.descricao || ""}</p></div>
   `;
 
-  const btnFav = document.getElementById("btnFavoritoDetalhe");
-  const btnPlay= document.getElementById("btnAssistirDetalhe");
-  const tempBox= document.getElementById("temporadaBox");
-  const tempSel= document.getElementById("temporadaSelect");
-  const epGrid = document.getElementById("episodiosGrid");
+  const btnFav  = document.getElementById("btnFavoritoDetalhe");
+  const btnPlay = document.getElementById("btnAssistirDetalhe");
+  const tempBox = document.getElementById("temporadaBox");
+  const tempSel = document.getElementById("temporadaSelect");
+  const epGrid  = document.getElementById("episodiosGrid");
 
   atualizarBotaoFavorito(item.id);
   if (btnFav) btnFav.onclick = () => alternarFavorito(item.id);
@@ -495,13 +557,13 @@ function renderDetalhe() {
   if (btnPlay) {
     btnPlay.onclick = () => {
       if (!primeiroEp?.video) { alert("Adicione um vídeo."); return; }
-      window.location.href = `assistir.html?serie=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(cat)}&temporada=1&episodio=${encodeURIComponent(primeiroEp.id)}&autoplay=1`;
+      window.location.href = `assistir.html?serie=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(cat)}&temporada=${primeiraTemp.numero}&episodio=${encodeURIComponent(primeiroEp.id)}&autoplay=1`;
     };
   }
 
   if (item.tipo === "Filme" || item.tipo === "Anime") {
     if (tempBox) tempBox.style.display = "none";
-    if (epGrid) epGrid.innerHTML = "";
+    if (epGrid)  epGrid.innerHTML = "";
     return;
   }
 
@@ -522,7 +584,7 @@ function renderDetalhe() {
     temp.episodios.forEach((ep, idx) => {
       const c = document.createElement("div");
       c.className = "ep-card";
-      c.innerHTML = `<h3>EP ${idx+1}</h3><p>${ep.titulo}</p><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>`;
+      c.innerHTML = `<h3>EP ${idx + 1}</h3><p>${ep.titulo}</p><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>`;
       c.addEventListener("click", () => {
         if (!ep.video) { alert("Sem vídeo."); return; }
         window.location.href = `assistir.html?serie=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(cat)}&temporada=${num}&episodio=${encodeURIComponent(ep.id)}&autoplay=1`;
@@ -537,53 +599,51 @@ function renderDetalhe() {
 
 // ─── Player ───────────────────────────────────────────────────────────────────
 function renderPlayer() {
-  const playerInfo   = document.getElementById("playerInfo");
-  const videoPlayer  = document.getElementById("videoPlayer");
-  const btnSkip      = document.getElementById("btnSkipIntro");
-  const btnNext      = document.getElementById("btnNextEpisode");
-  const clickZone    = document.getElementById("videoClickZone");
-  const btnFullscreen= document.getElementById("btnFullscreen");
+  const playerInfo  = document.getElementById("playerInfo");
+  const videoPlayer = document.getElementById("videoPlayer");
+  const btnSkip     = document.getElementById("btnSkipIntro");
+  const btnNext     = document.getElementById("btnNextEpisode");
+  const clickZone   = document.getElementById("videoClickZone");
 
   if (!playerInfo || !videoPlayer) return;
 
-  // Pause/play ao clicar na área do vídeo
+  // Pause/play ao clicar na área
   if (clickZone) {
     clickZone.addEventListener("click", () => {
-      if (videoPlayer.paused) videoPlayer.play().catch(()=>{});
+      if (videoPlayer.paused) videoPlayer.play().catch(() => {});
       else videoPlayer.pause();
     });
   }
 
-  // Botão tela cheia
-  if (btnFullscreen) {
-    btnFullscreen.addEventListener("click", () => {
-      const shell = document.querySelector(".player-shell");
-      if (!document.fullscreenElement) {
-        (shell || videoPlayer).requestFullscreen?.().catch(()=>{});
-      } else {
-        document.exitFullscreen?.();
-      }
-    });
-    document.addEventListener("fullscreenchange", () => {
-      btnFullscreen.textContent = document.fullscreenElement ? "⛶ Sair" : "⛶ Tela cheia";
-    });
-  }
+  // ── TELA CHEIA AUTOMÁTICA ──────────────────────────────────────────────────
+  // Entra em tela cheia assim que o vídeo começa a tocar (primeiro play)
+  const shell = document.querySelector(".player-shell");
+  videoPlayer.addEventListener("play", () => {
+    const alvo = shell || videoPlayer;
+    if (!document.fullscreenElement) {
+      alvo.requestFullscreen?.().catch(() => {
+        // iOS Safari usa webkitRequestFullscreen
+        alvo.webkitRequestFullscreen?.();
+      });
+    }
+  }, { once: true }); // once: true → só executa na primeira vez
 
-  const params      = new URLSearchParams(location.search);
-  const canalId     = params.get("canal");
-  const serieId     = params.get("serie");
-  const categoria   = params.get("categoria");
-  const tempNum     = parseInt(params.get("temporada"));
-  const episodioId  = params.get("episodio");
-  const autoplay    = params.get("autoplay") === "1";
+  const params    = new URLSearchParams(location.search);
+  const canalId   = params.get("canal");
+  const serieId   = params.get("serie");
+  const categoria = params.get("categoria");
+  const tempNum   = parseInt(params.get("temporada"));
+  const episodioId= params.get("episodio");
+  const autoplay  = params.get("autoplay") === "1";
 
   // Canal ao vivo
   if (canalId) {
-    const canal = (catalogoData?.aoVivo||[]).find(c => c.id === canalId);
+    const canal = (catalogoData?.aoVivo || []).find(c => c.id === canalId);
     if (!canal) { playerInfo.innerHTML = "<h1>Canal não encontrado.</h1>"; return; }
-    playerInfo.innerHTML = `<h1>${canal.titulo}</h1><p>${canal.descricao||""}</p>`;
+    playerInfo.innerHTML = `<h1>${canal.titulo}</h1><p>${canal.descricao || ""}</p>`;
     videoPlayer.src = canal.video;
     videoPlayer.load();
+    if (autoplay) videoPlayer.play().catch(() => {});
     return;
   }
 
@@ -595,15 +655,15 @@ function renderPlayer() {
   const episodio  = temporada?.episodios.find(e => e.id === episodioId);
   if (!episodio)  { playerInfo.innerHTML = "<h1>Episódio não encontrado.</h1>"; return; }
 
-  playerInfo.innerHTML = `<h1>${item.titulo}</h1><p>${episodio.titulo} — ${episodio.descricao||""}</p>`;
+  playerInfo.innerHTML = `<h1>${item.titulo}</h1><p>${episodio.titulo} — ${episodio.descricao || ""}</p>`;
   videoPlayer.src = episodio.video;
   videoPlayer.load();
 
   videoPlayer.addEventListener("loadedmetadata", () => {
-    if (autoplay) videoPlayer.play().catch(()=>{});
+    if (autoplay) videoPlayer.play().catch(() => {});
   }, { once: true });
 
-  // Skip intro: pula +60s a partir do momento atual
+  // Skip intro
   if (btnSkip) {
     btnSkip.classList.remove("hidden");
     btnSkip.onclick = () => {
@@ -623,14 +683,15 @@ function renderPlayer() {
     }
   }
 
-  // Salvar progresso a cada 10s e ao pausar
+  // Salvar progresso
   let saveTimer = null;
   function salvar() {
     if (!videoPlayer.duration || isNaN(videoPlayer.duration)) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       salvarProgresso({
-        episodioId: episodio.id, conteudoId: item.id,
+        episodioId:  episodio.id,
+        conteudoId:  item.id,
         currentTime: Math.floor(videoPlayer.currentTime),
         duration:    Math.floor(videoPlayer.duration),
       });
@@ -639,12 +700,10 @@ function renderPlayer() {
 
   videoPlayer.addEventListener("timeupdate", () => {
     salvar();
-    // Skip intro: visível se ainda há +60s restantes
     if (btnSkip) {
       const restante = videoPlayer.duration - videoPlayer.currentTime;
       btnSkip.classList.toggle("hidden", restante <= 60);
     }
-    // Próximo episódio: aparece nos últimos 60s
     if (btnNext && proximo) {
       const restante = videoPlayer.duration - videoPlayer.currentTime;
       btnNext.classList.toggle("hidden", restante > 60);
@@ -659,39 +718,23 @@ function encontrarProximo(item, tempNum, epId) {
   if (!temp) return null;
   const idx = temp.episodios.findIndex(e => e.id === epId);
   if (idx < temp.episodios.length - 1)
-    return { temporada: tempNum, episodio: temp.episodios[idx+1] };
+    return { temporada: tempNum, episodio: temp.episodios[idx + 1] };
   const proxTemp = item.temporadas.find(t => t.numero === tempNum + 1);
   if (proxTemp?.episodios.length)
     return { temporada: proxTemp.numero, episodio: proxTemp.episodios[0] };
   return null;
 }
 
-// ─── Ao Vivo / YouTube ────────────────────────────────────────────────────────
+// ─── Ao Vivo ──────────────────────────────────────────────────────────────────
 function renderAoVivoPage() {
   const grid = document.getElementById("canaisGrid");
   if (!grid) return;
-  (catalogoData?.aoVivo||[]).forEach(item =>
+  (catalogoData?.aoVivo || []).forEach(item =>
     grid.appendChild(criarCard(item, () =>
-      item.video ? (window.location.href=`assistir.html?canal=${encodeURIComponent(item.id)}`) : alert("Vídeo não configurado.")
+      item.video
+        ? (window.location.href = `assistir.html?canal=${encodeURIComponent(item.id)}`)
+        : alert("Vídeo não configurado.")
     ))
-  );
-}
-
-function abrirYoutube(item) {
-  if (!item.embed) { alert("ID do YouTube não configurado."); return; }
-  const box   = document.getElementById("youtubePlayerBox");
-  const frame = document.getElementById("youtubeFrame");
-  if (!box || !frame) return;
-  frame.src = `https://www.youtube.com/embed/${item.embed}?autoplay=1`;
-  box.classList.remove("hidden");
-  window.scrollTo({ top: document.body.scrollHeight, behavior:"smooth" });
-}
-
-function renderYoutubePage() {
-  const grid = document.getElementById("youtubeGrid");
-  if (!grid) return;
-  (catalogoData?.youtube||[]).forEach(item =>
-    grid.appendChild(criarCard(item, () => abrirYoutube(item)))
   );
 }
 
@@ -724,14 +767,11 @@ function iniciarMenuMobile() {
   const toggle = document.getElementById("menuToggle");
   const nav    = document.getElementById("mainNav");
   if (!toggle || !nav) return;
-
   toggle.addEventListener("click", () => {
     const aberto = nav.classList.toggle("nav-aberto");
     toggle.setAttribute("aria-expanded", aberto);
     toggle.innerHTML = aberto ? "✕" : "☰";
   });
-
-  // Fechar ao clicar fora
   document.addEventListener("click", e => {
     if (!toggle.contains(e.target) && !nav.contains(e.target)) {
       nav.classList.remove("nav-aberto");
@@ -742,8 +782,8 @@ function iniciarMenuMobile() {
 
 // ─── Usuário no header ────────────────────────────────────────────────────────
 function configurarUsuario() {
-  const nome   = document.getElementById("usuarioNome");
-  const btnSair= document.getElementById("btnSair");
+  const nome    = document.getElementById("usuarioNome");
+  const btnSair = document.getElementById("btnSair");
   if (nome)    nome.textContent = ls.get("sb_perfil_nome") || localStorage.getItem("usuarioEmail") || "";
   if (btnSair) btnSair.addEventListener("click", logout);
 }
@@ -754,10 +794,7 @@ function configurarUsuario() {
 
   const temPerfil = !!getPerfilId();
   const naHome    = !!(document.getElementById("rowDestaques"));
-
-  if (!temPerfil && naHome) {
-    await mostrarTelaPerfis();
-  }
+  if (!temPerfil && naHome) await mostrarTelaPerfis();
 
   await carregarUserData();
   configurarUsuario();
@@ -765,6 +802,7 @@ function configurarUsuario() {
   renderDetalhe();
   renderPlayer();
   renderAoVivoPage();
-  renderYoutubePage();
+  renderAulasPage();
+  renderMangasPage();
   iniciarMenuMobile();
 })();

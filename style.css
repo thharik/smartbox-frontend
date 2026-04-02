@@ -16,7 +16,17 @@ a { text-decoration: none; color: white; }
   top: 0;
   z-index: 30;
 }
-.logo { font-size: 28px; font-weight: bold; color: #e50914; }
+
+/* Logo agora é uma tag <a> — mantém aparência igual */
+.logo {
+  font-size: 28px;
+  font-weight: bold;
+  color: #e50914;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity .15s ease;
+}
+.logo:hover { opacity: .85; }
 
 /* Botão hambúrguer */
 .menu-toggle {
@@ -113,11 +123,11 @@ a { text-decoration: none; color: white; }
 .continuar-info { padding: 18px; display: flex; flex-direction: column; justify-content: center; }
 .continuar-info h3 { font-size: 26px; margin-bottom: 10px; }
 .continuar-info p { color: #ccc; margin-bottom: 16px; line-height: 1.5; }
-.continuar-info a { align-self: flex-start; background: #e50914; padding: 12px 18px; border-radius: 8px; font-weight: bold; }
+.continuar-info a { align-self: flex-start; background: #e50914; padding: 12px 18px; border-radius: 8px; font-weight: bold; color: #fff; }
 .continuar-progress { width: 100%; height: 6px; background: #333; border-radius: 999px; overflow: hidden; margin-top: 12px; }
 .continuar-progress-fill { height: 100%; background: #e50914; }
 
-/* ── Favoritos / custom ── */
+/* ── Favoritos ── */
 .favoritos-box { margin-bottom: 28px; }
 .hidden { display: none !important; }
 
@@ -163,12 +173,8 @@ a { text-decoration: none; color: white; }
   background: rgba(20,20,20,.92); color: #fff;
   border: 1px solid rgba(255,255,255,.2);
 }
-.skip-intro  { left: 18px; bottom: 18px; }
+.skip-intro   { left: 18px; bottom: 18px; }
 .next-episode { right: 18px; bottom: 18px; background: #e50914; border-color: #e50914; }
-.fullscreen-btn { right: 18px; top: 18px; font-size: 13px; padding: 8px 14px; }
-
-/* ── YouTube ── */
-.youtube-player-box { margin-top: 24px; border-radius: 12px; overflow: hidden; }
 
 /* ── Responsivo mobile ── */
 @media (max-width: 768px) {
