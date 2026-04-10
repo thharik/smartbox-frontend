@@ -806,3 +806,4 @@ function configurarUsuario() {
   renderMangasPage();
   iniciarMenuMobile();
 })();
+ 
