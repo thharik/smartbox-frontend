@@ -181,7 +181,6 @@
         }
       } catch {}
 
-      // Fallback: usa posters que já estejam em data.js (carregado antes deste script)
       if (!itens.length && typeof catalogo !== "undefined") {
         itens = [
           ...(catalogo.destaques || []),
