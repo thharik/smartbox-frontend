@@ -3,48 +3,122 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - SmartBox</title>
+  <title>Login - Tvxbox</title>
   <link rel="stylesheet" href="auth.css">
   <link rel="manifest" href="pwa/manifest.json">
   <meta name="theme-color" content="#141414">
   <link rel="apple-touch-icon" href="pwa/icon-192.png">
+  <style>
+    /* ── Preview slideshow de fundo ── */
+    .auth-bg-slideshow {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .auth-bg-slideshow .slide {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      transition: opacity 1.2s ease;
+    }
+    .auth-bg-slideshow .slide.ativo {
+      opacity: 1;
+    }
+    /* Cards flutuantes que aparecem sobre o fundo */
+    .preview-cards {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .preview-float-card {
+      position: absolute;
+      width: 130px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 28px rgba(0,0,0,.7);
+      opacity: 0;
+      transform: translateY(20px) scale(0.92);
+      animation: floatIn 0.7s ease forwards;
+    }
+    .preview-float-card img {
+      width: 100%;
+      display: block;
+      aspect-ratio: 2/3;
+      object-fit: cover;
+    }
+    @keyframes floatIn {
+      to { opacity: 0.85; transform: translateY(0) scale(1); }
+    }
+    /* Gradiente que escurece a esquerda (onde ficam os cards) */
+    .preview-left-fade {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      background: linear-gradient(
+        to right,
+        rgba(10,10,10,0.15) 0%,
+        rgba(10,10,10,0.55) 55%,
+        rgba(10,10,10,0.97) 78%,
+        rgba(10,10,10,1)    100%
+      );
+    }
+    /* Garante que o conteúdo do auth fica acima de tudo */
+    .auth-page { background: transparent; }
+    .auth-overlay { display: none; }
+    .auth-container { position: relative; z-index: 10; }
+  </style>
 </head>
 <body>
+
+  <!-- Slideshow de fundo com posters -->
+  <div class="auth-bg-slideshow" id="bgSlideshow"></div>
+
+  <!-- Cards flutuantes de posters -->
+  <div class="preview-cards" id="previewCards"></div>
+
+  <!-- Gradiente de fade -->
+  <div class="preview-left-fade"></div>
+
   <div class="auth-page">
     <div class="auth-overlay"></div>
- 
+
     <div class="auth-container">
- 
-      <!-- Lado esquerdo: marca + Pix de apoio -->
+
+      <!-- Lado esquerdo: marca + Pix -->
       <div class="auth-left">
         <div class="brand-box">
-          <h1>SMARTBOX</h1>
-          <p class="brand-subtitle">Filmes, séries e animes em uma experiência simples e bonita.</p>
+          <h1>TVXBOX</h1>
+          <p class="brand-subtitle">Filmes, séries, animes e mangás em uma experiência simples e bonita.</p>
         </div>
- 
+
         <div class="support-card">
           <h2>Ajude a melhorar o app</h2>
           <p class="support-text">
             O valor arrecadado será usado para melhorar o app, adicionar novidades,
             corrigir problemas e deixar a experiência cada vez melhor para todos.
           </p>
- 
+
           <div class="pix-box">
             <div class="pix-qr">
               <img src="assets/posteris/WhatsApp Image 2026-03-25 at 10.40.19.jpeg" alt="QR Code Pix" id="pixQrImage">
             </div>
- 
+
             <div class="pix-info">
               <p class="pix-title">Pagamento via Pix</p>
               <p class="pix-description">
                 Aponte a câmera do seu banco para o QR Code ou copie a chave Pix abaixo.
               </p>
- 
+
               <div class="pix-code-box">
                 <input type="text" id="pixCode" readonly value="82408b72-9d4f-4c2f-8391-96b789f18ea8">
                 <button type="button" id="copyPixBtn">Copiar Pix</button>
               </div>
- 
+
               <p class="pix-note">
                 Você escolhe o valor que quer pagar. Este app foi criado para ser acessível a todos.
               </p>
@@ -52,12 +126,12 @@
           </div>
         </div>
       </div>
- 
+
       <!-- Lado direito: formulário de login -->
       <div class="auth-right">
         <div class="auth-box">
           <h2>Entrar</h2>
- 
+
           <form id="loginForm">
             <div class="input-group">
               <label for="loginEmail">E-mail</label>
@@ -69,21 +143,116 @@
             </div>
             <button type="submit" class="main-btn">Entrar</button>
           </form>
- 
+
           <p id="loginMensagem" class="mensagem"></p>
- 
+
           <div class="auth-links">
             <span>Ainda não tem conta?</span>
             <a href="cadastro.html">Criar conta</a>
           </div>
         </div>
       </div>
- 
+
     </div>
   </div>
- 
+
   <script src="auth.js"></script>
   <script src="pwa/register-sw.js"></script>
+
+  <script>
+    // ── Preview slideshow na tela de login ───────────────────────────────────
+    // Busca posters do catálogo para mostrar como preview animado de fundo
+    (async function initPreview() {
+      const API = "https://tvxbox-backend-1.onrender.com";
+      let itens = [];
+
+      try {
+        const r = await fetch(API + "/catalogo", {
+          headers: { "Authorization": "Bearer " + (JSON.parse(localStorage.getItem("sb_token")) || "") }
+        });
+        if (r.ok) {
+          const data = await r.json();
+          itens = [
+            ...(data.destaques || []),
+            ...(data.animes    || []),
+            ...(data.series    || []),
+            ...(data.mangas    || []),
+          ].filter(i => i.poster);
+        }
+      } catch {}
+
+      // Fallback: usa posters que já estejam em data.js (carregado antes deste script)
+      if (!itens.length && typeof catalogo !== "undefined") {
+        itens = [
+          ...(catalogo.destaques || []),
+          ...(catalogo.animes    || []),
+          ...(catalogo.series    || []),
+        ].filter(i => i.poster);
+      }
+
+      if (!itens.length) return;
+
+      // ── Slideshow de fundo ──────────────────────────────────────────────
+      const bgEl = document.getElementById("bgSlideshow");
+      itens.forEach((item, i) => {
+        const slide = document.createElement("div");
+        slide.className = "slide" + (i === 0 ? " ativo" : "");
+        slide.style.backgroundImage = `url('${item.poster}')`;
+        bgEl.appendChild(slide);
+      });
+
+      let atualSlide = 0;
+      const slides = bgEl.querySelectorAll(".slide");
+      setInterval(() => {
+        slides[atualSlide].classList.remove("ativo");
+        atualSlide = (atualSlide + 1) % slides.length;
+        slides[atualSlide].classList.add("ativo");
+      }, 4000);
+
+      // ── Cards flutuantes ─────────────────────────────────────────────────
+      const cardsEl = document.getElementById("previewCards");
+      // Posições predefinidas (lado esquerdo da tela)
+      const posicoes = [
+        { left: "2%",  top: "8%"  },
+        { left: "16%", top: "5%"  },
+        { left: "30%", top: "10%" },
+        { left: "7%",  top: "45%" },
+        { left: "22%", top: "42%" },
+        { left: "35%", top: "48%" },
+        { left: "4%",  top: "72%" },
+        { left: "18%", top: "70%" },
+        { left: "32%", top: "75%" },
+      ];
+
+      // Embaralha para variar
+      const embaralhados = [...itens].sort(() => Math.random() - 0.5).slice(0, posicoes.length);
+
+      embaralhados.forEach((item, i) => {
+        const card = document.createElement("div");
+        card.className = "preview-float-card";
+        card.style.left           = posicoes[i].left;
+        card.style.top            = posicoes[i].top;
+        card.style.animationDelay = `${i * 0.18}s`;
+        card.innerHTML = `<img src="${item.poster}" alt="${item.titulo}" loading="lazy">`;
+        cardsEl.appendChild(card);
+      });
+
+      // A cada 6s troca alguns cards aleatoriamente
+      setInterval(() => {
+        const cards     = cardsEl.querySelectorAll(".preview-float-card");
+        const idxTrocar = Math.floor(Math.random() * cards.length);
+        const novoItem  = itens[Math.floor(Math.random() * itens.length)];
+        const card      = cards[idxTrocar];
+        card.style.opacity   = "0";
+        card.style.transform = "translateY(20px) scale(0.92)";
+        card.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+        setTimeout(() => {
+          card.querySelector("img").src = novoItem.poster;
+          card.style.opacity   = "0.85";
+          card.style.transform = "translateY(0) scale(1)";
+        }, 500);
+      }, 6000);
+    })();
+  </script>
 </body>
 </html>
- 

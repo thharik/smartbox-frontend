@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detalhe - Tvxbox</title>
+  <title>Aulas - Tvxbox</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="pwa/manifest.json">
   <meta name="theme-color" content="#141414">
@@ -29,28 +29,13 @@
   </header>
 
   <main class="container">
-
-    <section id="detalheConteudo" class="detalhe-box"></section>
-
-    <section class="detalhe-acoes" id="detalheAcoes">
-      <button id="btnAssistirDetalhe" class="btn-detalhe btn-play" type="button">
-        ▶ Assistir
-      </button>
-      <button id="btnFavoritoDetalhe" class="btn-detalhe btn-fav" type="button">
-        + Minha lista
-      </button>
-    </section>
-
-    <section class="temporada-box" id="temporadaBox">
-      <label for="temporadaSelect">Temporada:</label>
-      <select id="temporadaSelect"></select>
-    </section>
-
-    <section>
-      <div class="section-header"><h2>Episódios</h2></div>
-      <div id="episodiosGrid" class="episodios-grid"></div>
-    </section>
-
+    <h1 class="section-title" style="margin-bottom:24px">Aulas</h1>
+    <!--
+      Cursos são cadastrados no back-end com tipo "Aula"
+      e funcionam igual às séries: temporadas + episódios (vídeos)
+      Ao clicar, vai para detalhe.html?id=...&categoria=rowAulas
+    -->
+    <div id="rowAulas" class="poster-row"></div>
   </main>
 
   <script src="data.js"></script>
