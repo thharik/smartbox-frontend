@@ -3,19 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Assistir - SmartBox</title>
+  <title>Assistir - Tvxbox</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="pwa/manifest.json">
   <meta name="theme-color" content="#141414">
 </head>
 <body class="player-page">
   <header class="topbar">
-    <div class="logo">SMARTBOX</div>
+    <a href="index.html" class="logo">TVXBOX</a>
     <button class="menu-toggle" id="menuToggle" aria-label="Menu" aria-expanded="false">☰</button>
     <nav class="main-nav" id="mainNav">
       <a href="index.html">Início</a>
       <a href="ao-vivo.html">Ao Vivo</a>
-      <a href="youtube.html">YouTube</a>
+      <a href="mangas.html">Mangás</a>
+      <a href="aulas.html">Aulas</a>
     </nav>
     <div class="header-right">
       <div class="user-box">
@@ -35,12 +36,12 @@
 
       <button id="btnSkipIntro"   class="floating-btn skip-intro hidden"  type="button">⏩ Pular abertura</button>
       <button id="btnNextEpisode" class="floating-btn next-episode hidden" type="button">Próximo episódio ▶</button>
-      <button id="btnFullscreen"  class="floating-btn fullscreen-btn"      type="button">⛶ Tela cheia</button>
+      <!-- Botão tela cheia removido da UI — tela cheia já é automática ao dar play -->
     </div>
   </main>
 
   <script src="data.js"></script>
   <script src="script.js"></script>
-   <script src="pwa/register-sw.js"></script>
+  <script src="pwa/register-sw.js"></script>
 </body>
 </html>
