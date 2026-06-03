@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogos - Tvxbox</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="pwa/manifest.json">
+  <meta name="theme-color" content="#141414">
+  <link rel="apple-touch-icon" href="pwa/icon-192.png">
+  <style>
+    /* ── Página de jogos ── */
+    .jogos-hero {
+      background: linear-gradient(135deg, #0f0f0f 0%, #1a0a2e 50%, #0f0f0f 100%);
+      padding: 40px 30px 20px;
+      border-bottom: 1px solid #222;
+    }
+    .jogos-hero h1 {
+      font-size: 32px;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .jogos-hero p {
+      color: #888;
+      font-size: 15px;
+    }
+
+    /* ── Grid de jogos ── */
+    .jogos-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 30px;
+    }
+
+    .jogo-card {
+      width: 200px;
+      background: #1b1b1b;
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform .2s ease, border-color .2s ease;
+      position: relative;
+    }
+    .jogo-card:hover {
+      transform: scale(1.05);
+      border-color: #7b2ff7;
+    }
+    .jogo-card img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      display: block;
+    }
+    .jogo-card .jogo-info {
+      padding: 12px;
+    }
+    .jogo-card h3 {
+      font-size: 15px;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+    .jogo-card .jogo-sistema {
+      font-size: 12px;
+      color: #7b2ff7;
+      font-weight: bold;
+      background: rgba(123,47,247,.15);
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .jogo-card .jogo-play-overlay {
+      position: absolute;
+      inset: 0 0 60px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.5);
+      opacity: 0;
+      font-size: 42px;
+      transition: opacity .2s;
+      border-radius: 14px 14px 0 0;
+    }
+    .jogo-card:hover .jogo-play-overlay { opacity: 1; }
+
+    /* ── Modal de loading ── */
+    .jogo-loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.9);
+      z-index: 9999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    .jogo-loading-overlay.ativo { display: flex; }
+    .jogo-loading-overlay h2 { color: #fff; font-size: 22px; }
+    .jogo-loading-overlay p  { color: #888; font-size: 14px; }
+    .spinner {
+      width: 50px; height: 50px;
+      border: 4px solid #333;
+      border-top-color: #7b2ff7;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Tela do emulador ── */
+    #emuladorSection {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      background: #000;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    #emuladorSection.ativo { display: flex; }
+
+    .emulador-header {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .btn-voltar-jogo {
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .btn-voltar-jogo:hover { background: #333; }
+
+    .emulador-titulo {
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    #emuladorContainer {
+      width: 100%;
+      max-width: 960px;
+      aspect-ratio: 4/3;
+      background: #111;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #333;
+    }
+
+    /* Dica de controles */
+    .controles-dica {
+      margin-top: 16px;
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 10px;
+      padding: 14px 20px;
+      width: 100%;
+      max-width: 960px;
+    }
+    .controles-dica h4 { color: #aaa; font-size: 13px; margin-bottom: 10px; }
+    .controles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+    }
+    .controle-item {
+      background: #1a1a1a;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #ccc;
+      display: flex;
+      justify-content: space-between;
+    }
+    .controle-item kbd {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 11px;
+      color: #e0e0e0;
+      font-family: monospace;
+    }
+
+    @media (max-width: 768px) {
+      .jogos-grid { padding: 16px; gap: 14px; }
+      .jogo-card  { width: 140px; }
+      .jogo-card img { height: 180px; }
+      #emuladorContainer { aspect-ratio: unset; height: 55vw; min-height: 240px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header class="topbar">
+    <a href="index.html" class="logo">TVXBOX</a>
+    <button class="menu-toggle" id="menuToggle" aria-label="Menu" aria-expanded="false">☰</button>
+    <nav class="main-nav" id="mainNav">
+      <a href="index.html">Início</a>
+      <a href="ao-vivo.html">Ao Vivo</a>
+      <a href="mangas.html">Mangás</a>
+      <a href="aulas.html">Aulas</a>
+      <a href="jogos.html" style="color:#7b2ff7;font-weight:bold">🎮 Jogos</a>
+    </nav>
+    <div class="header-right">
+      <div class="user-box">
+        <span id="usuarioNome"></span>
+        <button id="btnSair" type="button">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Lista de jogos ── -->
+  <div id="jogosSection">
+    <div class="jogos-hero">
+      <h1>🎮 Jogos</h1>
+      <p>Clique em um jogo para jogar direto no navegador</p>
+    </div>
+    <div class="jogos-grid" id="jogosGrid">
+      <!-- Cards gerados pelo JS -->
+    </div>
+  </div>
+
+  <!-- ── Tela do emulador ── -->
+  <section id="emuladorSection">
+    <div class="emulador-header">
+      <button class="btn-voltar-jogo" id="btnVoltarJogos">← Voltar</button>
+      <span class="emulador-titulo" id="emuladorTitulo">King of Fighters 2002</span>
+    </div>
+
+    <!-- EmulatorJS injeta o canvas aqui -->
+    <div id="emuladorContainer"></div>
+
+    <!-- Dica de controles -->
+    <div class="controles-dica">
+      <h4>⌨️ Controles padrão (podem ser reconfigurados no menu do emulador)</h4>
+      <div class="controles-grid">
+        <div class="controle-item"><span>Mover</span><kbd>↑ ↓ ← →</kbd></div>
+        <div class="controle-item"><span>Soco fraco</span><kbd>A</kbd></div>
+        <div class="controle-item"><span>Soco forte</span><kbd>S</kbd></div>
+        <div class="controle-item"><span>Chute fraco</span><kbd>Z</kbd></div>
+        <div class="controle-item"><span>Chute forte</span><kbd>X</kbd></div>
+        <div class="controle-item"><span>Start</span><kbd>Enter</kbd></div>
+        <div class="controle-item"><span>Inserir moeda</span><kbd>5</kbd></div>
+        <div class="controle-item"><span>Menu salvar</span><kbd>F1</kbd></div>
+        <div class="controle-item"><span>Tela cheia</span><kbd>F</kbd></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Overlay de carregamento ── -->
+  <div class="jogo-loading-overlay" id="jogoLoadingOverlay">
+    <div class="spinner"></div>
+    <h2 id="jogoLoadingTitulo">Carregando King of Fighters 2002…</h2>
+    <p>Baixando ROM do servidor, aguarde…</p>
+  </div>
+
+  <script src="script.js"></script>
+  <script src="pwa/register-sw.js"></script>
+
+  <script>
+    // ── Lista de jogos disponíveis ─────────────────────────────────────────────
+    // Adicione mais jogos aqui conforme subir ROMs no B2
+    // sistema: "arcade" | "nes" | "snes" | "gba" | "n64" | "psx" | "segaMD"
+    const JOGOS_LISTA = [
+      {
+        id:      "kof2002",
+        titulo:  "King of Fighters 2002",
+        sistema: "arcade",
+        core:    "arcade",
+        poster:  "https://i.imgur.com/KfBQp5E.jpeg",
+        // Nome EXATO do arquivo no seu bucket B2
+        romFile: "King of Fighters 2002.7z",
+        descricao: "Clássico de luta arcade da SNK"
+      },
+      // Exemplo de como adicionar mais jogos futuramente:
+      // {
+      //   id: "metalgear",
+      //   titulo: "Metal Slug 3",
+      //   sistema: "arcade",
+      //   core: "arcade",
+      //   poster: "https://...",
+      //   romFile: "Metal Slug 3.zip",
+      //   descricao: "Ação e aventura"
+      // },
+    ];
+
+    // ── Renderiza cards ────────────────────────────────────────────────────────
+    const grid = document.getElementById("jogosGrid");
+    JOGOS_LISTA.forEach(jogo => {
+      const card = document.createElement("div");
+      card.className = "jogo-card";
+      card.innerHTML = `
+        <img src="${jogo.poster}" alt="${jogo.titulo}" loading="lazy"
+             onerror="this.src='assets/posters/placeholder.jpg'">
+        <div class="jogo-play-overlay">▶</div>
+        <div class="jogo-info">
+          <h3>${jogo.titulo}</h3>
+          <span class="jogo-sistema">${jogo.sistema.toUpperCase()}</span>
+        </div>
+      `;
+      card.addEventListener("click", () => iniciarJogo(jogo));
+      grid.appendChild(card);
+    });
+
+    // ── Iniciar emulador ───────────────────────────────────────────────────────
+    let emuladorCarregado = false;
+
+    function iniciarJogo(jogo) {
+      // Mostra loading
+      const overlay = document.getElementById("jogoLoadingOverlay");
+      document.getElementById("jogoLoadingTitulo").textContent = `Carregando ${jogo.titulo}…`;
+      overlay.classList.add("ativo");
+
+      // Troca de seção
+      document.getElementById("jogosSection").style.display   = "none";
+      document.getElementById("emuladorSection").classList.add("ativo");
+      document.getElementById("emuladorTitulo").textContent   = jogo.titulo;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // URL da ROM via backend (evita CORS, autentica no B2)
+      // O backend serve: GET /video/rom/:fileName
+      const API = (window.API_URL || "https://tvxbox-backend-1.onrender.com");
+      const romUrl = `${API}/video/rom/${encodeURIComponent(jogo.romFile)}`;
+
+      // Limpa container caso tenha carregado antes
+      const container = document.getElementById("emuladorContainer");
+      container.innerHTML = "";
+
+      // Configura EmulatorJS
+      window.EJS_player    = "#emuladorContainer";
+      window.EJS_core      = jogo.core;        // ex: "arcade"
+      window.EJS_gameUrl   = romUrl;
+      window.EJS_pathtodata= "/emulatorjs/data/";
+      window.EJS_color     = "#7b2ff7";
+      window.EJS_startOnLoaded = false;        // usuário clica play
+
+      window.EJS_onGameStart = () => {
+        overlay.classList.remove("ativo");
+        emuladorCarregado = true;
+      };
+
+      // Fallback: remove overlay depois de 8s caso callback não dispare
+      setTimeout(() => overlay.classList.remove("ativo"), 8000);
+
+      // Injeta o loader do EmulatorJS
+      const script = document.createElement("script");
+      script.src = "/emulatorjs/data/loader.js";
+      script.onerror = () => {
+        overlay.classList.remove("ativo");
+        container.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#aaa;gap:12px;padding:20px;text-align:center;">
+            <div style="font-size:48px">⚠️</div>
+            <p style="font-size:16px;color:#fff">EmulatorJS não encontrado</p>
+            <p style="font-size:13px">Veja o passo a passo abaixo para instalar o EmulatorJS no servidor.</p>
+          </div>`;
+      };
+      document.body.appendChild(script);
+    }
+
+    // ── Botão voltar ───────────────────────────────────────────────────────────
+    document.getElementById("btnVoltarJogos").addEventListener("click", () => {
+      document.getElementById("emuladorSection").classList.remove("ativo");
+      document.getElementById("jogosSection").style.display = "";
+      // Remove scripts do EmulatorJS para não conflitar ao recarregar
+      document.querySelectorAll('script[src*="loader.js"]').forEach(s => s.remove());
+      emuladorCarregado = false;
+    });
+
+    // ── Usuário / logout ────────────────────────────────────────────────────────
+    const nm = document.getElementById("usuarioNome");
+    if (nm) nm.textContent = localStorage.getItem("sb_perfil_nome") || localStorage.getItem("usuarioEmail") || "";
+    const bs = document.getElementById("btnSair");
+    if (bs) bs.addEventListener("click", () => {
+      localStorage.clear();
+      window.location.href = "login.html";
+    });
+    const mt = document.getElementById("menuToggle");
+    const mn = document.getElementById("mainNav");
+    if (mt && mn) mt.addEventListener("click", () => mn.classList.toggle("nav-aberto"));
+  </script>
+
+</body>
+</html>
