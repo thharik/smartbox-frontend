@@ -1718,19 +1718,27 @@ function renderPlayer() {
   function getEpisodioAtual() {
     return item.temporadas.find(t => t.numero === tempNumAtual)?.episodios.find(e => e.id === episodioIdAtual) || null;
   }
-
   function carregarVideo(ep) {
-    if (!ep) { playerInfo.innerHTML = "<h1>Episódio não encontrado.</h1>"; return; }
-    let videoUrl = ep.video;
-    if (audioModo === "legendado" && ep.videoLegendado) videoUrl = ep.videoLegendado;
-    else if (audioModo === "dublado" && ep.videoDublado) videoUrl = ep.videoDublado;
-    playerInfo.innerHTML = `<h1>${item.titulo}</h1><p>${ep.titulo}${ep.descricao?" — "+ep.descricao:""}</p>`;
-    carregarVideoHLS(videoPlayer, videoUrl);
-    videoPlayer.addEventListener("loadedmetadata", () => { if (autoplay) videoPlayer.play().catch(() => {}); }, { once:true });
-    renderEpisodiosBar();
-    atualizarBotaoProximo();
-  }
+    if (!ep) {
+        playerInfo.innerHTML = "<h1>Episódio não encontrado.</h1>";
+        return;
+    }
 
+    let videoUrl = ep.video;
+
+    if (audioModo === "legendado" && ep.videoLegendado)
+        videoUrl = ep.videoLegendado;
+    else if (audioModo === "dublado" && ep.videoDublado)
+        videoUrl = ep.videoDublado;
+
+    console.log("EP =", ep);
+    console.log("VIDEO URL =", videoUrl);
+
+    playerInfo.innerHTML =
+      `<h1>${item.titulo}</h1><p>${ep.titulo}${ep.descricao ? " — " + ep.descricao : ""}</p>`;
+
+    carregarVideoHLS(videoPlayer, videoUrl);
+  }
   function injetarControlesPlayer() {
     document.getElementById("playerControlesBar")?.remove();
     const bar = document.createElement("div");
