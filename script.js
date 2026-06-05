@@ -2000,58 +2000,82 @@ function renderPlayer() {
     if (!document.webkitFullscreenElement) aplicarZoom(1);
   });
 
-  let saveTimer = null;
-  function salvar() {
+  // ── Salvar progresso ────────────────────────────────────────────────────────
+  // Usa setInterval para salvar a cada 5s enquanto toca, + no pause e ao fechar
+  let saveInterval = null;
+
+  function salvarAgora() {
     if (!videoPlayer.duration || isNaN(videoPlayer.duration)) return;
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      const epAtual = getEpisodioAtual();
-      const payload = {
-        episodioId:  episodioIdAtual,
-        conteudoId:  item.id,
-        currentTime: Math.floor(videoPlayer.currentTime),
-        duration:    Math.floor(videoPlayer.duration),
-        // Campos extras para o "continuar assistindo"
-        titulo:    item.titulo    || "",
-        ep_titulo: epAtual?.titulo || "",
-        poster:    item.poster    || "",
-        capa:      epAtual?.capa  || item.poster || "",
-      };
+    if (!videoPlayer.currentTime || videoPlayer.currentTime < 1) return;
 
-      // Salva imediatamente no cache local (não espera a API)
-      const cache = ls.get("sb_continuar_cache") || [];
-      const idx   = cache.findIndex(x => x.episodio_id === episodioIdAtual || x.episodioId === episodioIdAtual);
-      const entry = {
-        episodio_id:  episodioIdAtual,
-        conteudo_id:  item.id,
-        current_time: payload.currentTime,
-        duration:     payload.duration,
-        titulo:       payload.titulo,
-        ep_titulo:    payload.ep_titulo,
-        poster:       payload.poster,
-        capa:         payload.capa,
-        updated_at:   Date.now(),
-      };
-      if (idx >= 0) cache.splice(idx, 1);
-      cache.unshift(entry); // mais recente primeiro
-      ls.set("sb_continuar_cache", cache.slice(0, 20));
+    const epAtual = getEpisodioAtual();
+    const payload = {
+      episodioId:  episodioIdAtual,
+      conteudoId:  item.id,
+      currentTime: Math.floor(videoPlayer.currentTime),
+      duration:    Math.floor(videoPlayer.duration),
+      titulo:      item.titulo    || "",
+      ep_titulo:   epAtual?.titulo || "",
+      poster:      item.poster    || "",
+      capa:        epAtual?.capa  || item.poster || "",
+    };
 
-      // Atualiza userData em memória para refletir imediatamente
-      const idxMem = (userData.continuarAssistindo || []).findIndex(x => x.episodio_id === episodioIdAtual);
-      if (idxMem >= 0) userData.continuarAssistindo.splice(idxMem, 1);
-      userData.continuarAssistindo = [entry, ...(userData.continuarAssistindo || [])];
+    // Salva no localStorage imediatamente
+    const cache = ls.get("sb_continuar_cache") || [];
+    const idx   = cache.findIndex(x => x.episodio_id === episodioIdAtual);
+    const entry = {
+      episodio_id:  episodioIdAtual,
+      conteudo_id:  item.id,
+      current_time: payload.currentTime,
+      duration:     payload.duration,
+      titulo:       payload.titulo,
+      ep_titulo:    payload.ep_titulo,
+      poster:       payload.poster,
+      capa:         payload.capa,
+      updated_at:   Date.now(),
+    };
+    if (idx >= 0) cache.splice(idx, 1);
+    cache.unshift(entry);
+    ls.set("sb_continuar_cache", cache.slice(0, 20));
 
-      salvarProgresso(payload);
-    }, 500);
+    // Atualiza memória
+    const idxMem = (userData.continuarAssistindo || []).findIndex(x => x.episodio_id === episodioIdAtual);
+    if (idxMem >= 0) userData.continuarAssistindo.splice(idxMem, 1);
+    userData.continuarAssistindo = [entry, ...(userData.continuarAssistindo || [])];
+
+    // Envia para API (sem bloquear)
+    salvarProgresso(payload);
   }
 
+  function iniciarSaveInterval() {
+    clearInterval(saveInterval);
+    saveInterval = setInterval(salvarAgora, 5000); // salva a cada 5s
+  }
+  function pararSaveInterval() {
+    clearInterval(saveInterval);
+    saveInterval = null;
+  }
+
+  videoPlayer.addEventListener("play",  iniciarSaveInterval);
+  videoPlayer.addEventListener("pause", () => { pararSaveInterval(); salvarAgora(); });
+  videoPlayer.addEventListener("ended", () => { pararSaveInterval(); salvarAgora(); });
+
+  // Salva ao fechar/sair da página
+  window.addEventListener("beforeunload", salvarAgora);
+  window.addEventListener("pagehide",     salvarAgora);
+
+  // Atualiza botões skip/próximo no timeupdate (sem salvar aqui)
   videoPlayer.addEventListener("timeupdate", () => {
-    salvar();
-    if (btnSkip) { const r = videoPlayer.duration - videoPlayer.currentTime; btnSkip.classList.toggle("hidden", r <= 60); }
+    if (btnSkip) {
+      const r = videoPlayer.duration - videoPlayer.currentTime;
+      btnSkip.classList.toggle("hidden", r <= 60);
+    }
     const proximo = encontrarProximo(item, tempNumAtual, episodioIdAtual);
-    if (btnNext && proximo) { const r = videoPlayer.duration - videoPlayer.currentTime; btnNext.classList.toggle("hidden", r > 60); }
+    if (btnNext && proximo) {
+      const r = videoPlayer.duration - videoPlayer.currentTime;
+      btnNext.classList.toggle("hidden", r > 60);
+    }
   });
-  videoPlayer.addEventListener("pause", salvar);
 }
 
 function encontrarProximo(item, tempNum, epId) {
@@ -2130,14 +2154,21 @@ function iniciarFiltros() {
   }));
 }
 
-// ─── Bloquear zoom da página (Ctrl+scroll, Ctrl+/-/0) ────────────────────────
+// ─── Bloquear zoom da página (Ctrl+scroll, Ctrl+/-/0, pinça fora do vídeo) ────
 (function bloquearZoomPagina() {
-  const naPlayer = !!document.getElementById("videoPlayer");
-  if (naPlayer) return; // player precisa de zoom
+  // Bloqueia Ctrl+scroll em todas as páginas
   document.addEventListener("wheel", e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+  // Bloqueia Ctrl + / - / 0
   document.addEventListener("keydown", e => {
     if (e.ctrlKey && (e.key === "+" || e.key === "-" || e.key === "=" || e.key === "0")) e.preventDefault();
   });
+  // Bloqueia pinça na página (exceto no próprio elemento #videoPlayer tratado separadamente)
+  document.addEventListener("touchmove", e => {
+    if (e.touches.length >= 2) {
+      const video = document.getElementById("videoPlayer");
+      if (!video || !video.contains(e.target)) e.preventDefault();
+    }
+  }, { passive: false });
 })();
 
 // ─── Menu mobile ─────────────────────────────────────────────────────────────
