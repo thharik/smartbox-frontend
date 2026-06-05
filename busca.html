@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Busca - Tvxbox</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="pwa/manifest.json">
+  <meta name="theme-color" content="#141414">
+  <link rel="apple-touch-icon" href="pwa/icon-192.png">
+  <style>
+    .busca-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 24px;
+      background: rgba(17,17,17,.97);
+      border-bottom: 1px solid #222;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+    .busca-back {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 8px;
+      line-height: 1;
+    }
+    .busca-back:hover { background: #222; }
+    .busca-input-wrap {
+      flex: 1;
+      position: relative;
+    }
+    .busca-input-wrap input {
+      width: 100%;
+      padding: 12px 16px 12px 44px;
+      border-radius: 12px;
+      border: 1.5px solid #333;
+      background: #1e1e1e;
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .busca-input-wrap input:focus { border-color: #555; }
+    .busca-input-wrap .busca-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #888;
+      font-size: 18px;
+      pointer-events: none;
+    }
+    .busca-limpar {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 18px;
+      cursor: pointer;
+      display: none;
+    }
+
+    .busca-container { padding: 20px 24px; }
+
+    /* Estado vazio — exibe categorias */
+    .busca-categorias { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px; }
+    .busca-cat-btn {
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1.5px solid #333;
+      background: #1e1e1e;
+      color: #ddd;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+    .busca-cat-btn:hover,
+    .busca-cat-btn.active { background: #e50914; border-color: #e50914; color: #fff; }
+
+    /* Lista de resultados — cards retangulares verticais */
+    #buscaResultados { display: flex; flex-direction: column; gap: 0; }
+
+    .busca-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid #1f1f1f;
+      cursor: pointer;
+      transition: background .15s;
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .busca-item:hover { background: #1a1a1a; }
+    .busca-item.hidden { display: none !important; }
+
+    .busca-item-poster {
+      width: 80px;
+      height: 112px;
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #111;
+    }
+    .busca-item-poster img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .busca-item-info { flex: 1; }
+    .busca-item-titulo {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      line-height: 1.3;
+    }
+    .busca-item-tipo {
+      display: inline-block;
+      font-size: 11px;
+      color: #aaa;
+      background: #2a2a2a;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+    .busca-item-desc {
+      font-size: 13px;
+      color: #888;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .busca-item-seta {
+      color: #555;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .busca-vazio {
+      text-align: center;
+      color: #555;
+      padding: 60px 0;
+      font-size: 15px;
+    }
+    .busca-vazio span { font-size: 40px; display: block; margin-bottom: 12px; }
+
+    .busca-titulo-sec {
+      font-size: 13px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin: 20px 0 8px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 480px) {
+      .busca-container { padding: 14px 14px; }
+      .busca-header { padding: 14px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="busca-header">
+    <button class="busca-back" id="btnVoltar" aria-label="Voltar">‹</button>
+    <div class="busca-input-wrap">
+      <span class="busca-icon">🔍</span>
+      <input type="text" id="buscaInput" placeholder="Títulos, gêneros…" autofocus autocomplete="off" spellcheck="false">
+      <button class="busca-limpar" id="btnLimpar" aria-label="Limpar">✕</button>
+    </div>
+  </header>
+
+  <main class="busca-container">
+    <!-- Categorias (estado inicial) -->
+    <div id="buscaCategorias">
+      <p class="busca-titulo-sec">Explorar por categoria</p>
+      <div class="busca-categorias">
+        <button class="busca-cat-btn" data-filter="todos">Todos</button>
+        <button class="busca-cat-btn" data-filter="Filme">Filmes</button>
+        <button class="busca-cat-btn" data-filter="Série">Séries</button>
+        <button class="busca-cat-btn" data-filter="Anime">Animes</button>
+        <button class="busca-cat-btn" data-filter="AoVivo">Ao vivo</button>
+      </div>
+    </div>
+
+    <!-- Resultados -->
+    <div id="buscaResultados"></div>
+    <div id="buscaVazio" class="busca-vazio hidden">
+      <span>🔍</span>
+      Nenhum resultado encontrado
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script src="pwa/register-sw.js"></script>
+  <script>
+  (function() {
+    const input       = document.getElementById("buscaInput");
+    const btnLimpar   = document.getElementById("btnLimpar");
+    const btnVoltar   = document.getElementById("btnVoltar");
+    const catBox      = document.getElementById("buscaCategorias");
+    const resultados  = document.getElementById("buscaResultados");
+    const vazio       = document.getElementById("buscaVazio");
+    const catBtns     = document.querySelectorAll(".busca-cat-btn");
+
+    btnVoltar.addEventListener("click", () => history.back());
+
+    let filtroAtivo = "todos";
+
+    catBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        catBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        filtroAtivo = btn.dataset.filter;
+        renderTodos(filtroAtivo);
+      });
+    });
+
+    btnLimpar.addEventListener("click", () => {
+      input.value = "";
+      btnLimpar.style.display = "none";
+      catBox.style.display    = "";
+      renderTodos(filtroAtivo);
+      input.focus();
+    });
+
+    input.addEventListener("input", () => {
+      const q = input.value.trim();
+      btnLimpar.style.display = q ? "block" : "none";
+      if (!q) { catBox.style.display = ""; renderTodos(filtroAtivo); return; }
+      catBox.style.display = "none";
+      buscar(q);
+    });
+
+    function getTodos() {
+      if (typeof catalogoData === "undefined" || !catalogoData) return [];
+      return [
+        ...(catalogoData.destaques || []),
+        ...(catalogoData.animes    || []),
+        ...(catalogoData.series    || []),
+        ...(catalogoData.aoVivo    || []),
+        ...(catalogoData.aulas     || []),
+      ];
+    }
+
+    function renderItem(item) {
+      const cat = item.tipo === "AoVivo" ? null : (() => {
+        if (typeof buscarItemEmTodoCatalogo === "function") {
+          return buscarItemEmTodoCatalogo(item.id).cat;
+        }
+        return null;
+      })();
+      const href = item.tipo === "AoVivo" || item.video
+        ? `assistir.html?canal=${encodeURIComponent(item.id)}`
+        : `detalhe.html?id=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(cat || "rowAnimes")}`;
+
+      const div = document.createElement("div");
+      div.className = "busca-item";
+      div.dataset.titulo = (item.titulo || "").toLowerCase();
+      div.dataset.tipo   = item.tipo || "";
+      div.innerHTML = `
+        <div class="busca-item-poster">
+          <img src="${item.poster || "assets/posters/placeholder.jpg"}" alt="${item.titulo}" loading="lazy">
+        </div>
+        <div class="busca-item-info">
+          <p class="busca-item-titulo">${item.titulo}</p>
+          <span class="busca-item-tipo">${item.tipo || "Conteúdo"}</span>
+          ${item.descricao ? `<p class="busca-item-desc">${item.descricao}</p>` : ""}
+        </div>
+        <span class="busca-item-seta">›</span>
+      `;
+      div.addEventListener("click", () => { window.location.href = href; });
+      return div;
+    }
+
+    function renderTodos(filtro = "todos") {
+      resultados.innerHTML = "";
+      vazio.classList.add("hidden");
+      const lista = getTodos().filter(i => filtro === "todos" || i.tipo === filtro);
+      if (!lista.length) { vazio.classList.remove("hidden"); return; }
+      lista.forEach(item => resultados.appendChild(renderItem(item)));
+    }
+
+    function buscar(q) {
+      resultados.innerHTML = "";
+      vazio.classList.add("hidden");
+      const lower = q.toLowerCase();
+      const lista = getTodos().filter(i =>
+        (i.titulo || "").toLowerCase().includes(lower) ||
+        (i.descricao || "").toLowerCase().includes(lower)
+      );
+      if (!lista.length) { vazio.classList.remove("hidden"); return; }
+      lista.forEach(item => resultados.appendChild(renderItem(item)));
+    }
+
+    // Aguarda o catálogo estar disponível (o script.js carrega async)
+    function aguardarCatalogo(cb, tentativas = 20) {
+      if (typeof catalogoData !== "undefined" && catalogoData) { cb(); return; }
+      if (tentativas <= 0) return;
+      setTimeout(() => aguardarCatalogo(cb, tentativas - 1), 150);
+    }
+
+    aguardarCatalogo(() => renderTodos("todos"));
+  })();
+  </script>
+</body>
+</html>

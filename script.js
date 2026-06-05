@@ -1100,12 +1100,22 @@ async function carregarCatalogo() {
 }
 
 async function carregarUserData() {
+  // Carrega sempre do cache local primeiro (garante favoritos offline)
+  const favCache = ls.get("sb_fav_cache");
+  if (favCache) userData.favoritos = favCache;
+
   if (!getPerfilId()) return;
   const [favs, continuar] = await Promise.all([
     apiFetch("/favoritos",           { headers: headers(true) }),
     apiFetch("/progresso/continuar", { headers: headers(true) }),
   ]);
-  if (favs)     userData.favoritos            = favs.map(f => f.id || f.conteudo_id);
+  if (favs) {
+    userData.favoritos = favs.map(f => f.id || f.conteudo_id);
+    // Mescla com cache local (itens offline que ainda não sincronizaram)
+    const local = ls.get("sb_fav_cache") || [];
+    local.forEach(id => { if (!userData.favoritos.includes(id)) userData.favoritos.push(id); });
+    ls.set("sb_fav_cache", userData.favoritos);
+  }
   if (continuar) userData.continuarAssistindo = continuar;
 }
 
@@ -1317,8 +1327,12 @@ function itemEhFavorito(id) { return userData.favoritos.includes(id); }
 async function alternarFavorito(itemId) {
   const res = await apiFetch("/favoritos/toggle", { method:"POST", headers:headers(true), body:JSON.stringify({ conteudoId: itemId }) });
   if (res !== null) {
-    if (res.favoritado) userData.favoritos.push(itemId);
-    else userData.favoritos = userData.favoritos.filter(x => x !== itemId);
+    if (res.favoritado) {
+      if (!userData.favoritos.includes(itemId)) userData.favoritos.push(itemId);
+    } else {
+      userData.favoritos = userData.favoritos.filter(x => x !== itemId);
+    }
+    ls.set("sb_fav_cache", userData.favoritos);
   } else {
     const favs = ls.get("sb_fav_cache") || [];
     const idx = favs.indexOf(itemId);
@@ -1380,11 +1394,14 @@ function renderContinuarAssistindo() {
   const row  = document.getElementById("continuarCard");
   if (!box || !row) return;
 
-  // Ordena: mais recente primeiro (o backend já retorna assim, mas garantimos)
-  const lista = [...(userData.continuarAssistindo || [])];
+  // Ordena: mais recente primeiro
+  const lista = [...(userData.continuarAssistindo || [])].sort((a, b) => {
+    return (b.updated_at || b.ts || 0) > (a.updated_at || a.ts || 0) ? 1 : -1;
+  });
   if (!lista.length) { box.classList.add("hidden"); return; }
 
   row.innerHTML = "";
+  row.className = "continuar-row";
 
   lista.forEach(item => {
     const pct = item.duration > 0 ? Math.min(100, Math.round((item.current_time / item.duration) * 100)) : 0;
@@ -1394,21 +1411,24 @@ function renderContinuarAssistindo() {
 
     const restanteSeg = item.duration - item.current_time;
     const restanteMin = Math.max(0, Math.round(restanteSeg / 60));
-    const restanteTxt = restanteMin > 1 ? `${restanteMin}min restantes` : "Quase finalizado";
+    const restanteTxt = restanteMin > 1 ? `${restanteMin} min` : "Finalizado";
+
+    // Usa capa do episódio (cena) se disponível, senão poster da série
+    const imgSrc = item.capa || item.poster || "assets/posters/placeholder.jpg";
 
     const bloco = document.createElement("div");
-    bloco.className = "continuar-mini-card";
+    bloco.className = "continuar-card-h";
     bloco.innerHTML = `
-      <a href="${link}" class="continuar-mini-link">
-        <div class="continuar-mini-thumb">
-          <img src="${item.poster || item.capa || "assets/posters/placeholder.jpg"}" alt="${item.titulo || ""}">
-          <div class="continuar-mini-overlay">▶</div>
+      <a href="${link}" class="continuar-card-h-link">
+        <div class="continuar-card-h-thumb">
+          <img src="${imgSrc}" alt="${item.titulo || ""}">
+          <div class="continuar-play-icon">▶</div>
+          <div class="continuar-card-h-bar"><div class="continuar-card-h-fill" style="width:${pct}%"></div></div>
         </div>
-        <div class="continuar-mini-info">
-          <div class="continuar-mini-progress"><div class="continuar-mini-fill" style="width:${pct}%"></div></div>
-          <p class="continuar-mini-titulo">${item.titulo || "Sem título"}</p>
-          <p class="continuar-mini-ep">${item.ep_titulo || ""}</p>
-          <p class="continuar-mini-resto">${restanteTxt}</p>
+        <div class="continuar-card-h-info">
+          <p class="continuar-card-h-titulo">${item.titulo || "Sem título"}</p>
+          <p class="continuar-card-h-ep">${item.ep_titulo || ""}</p>
+          <p class="continuar-card-h-resto">${restanteTxt}</p>
         </div>
       </a>
     `;
@@ -1545,7 +1565,10 @@ function renderDetalhe() {
   const totalEps = item.temporadas?.reduce((s, t) => s + (t.episodios?.length || 0), 0) || 0;
   if (item.tipo === "Filme" && totalEps <= 1) {
     if (tempBox) tempBox.style.display = "none";
-    if (epGrid)  epGrid.innerHTML = "";
+    if (epGrid)  epGrid.style.display  = "none";
+    // Esconde também o h2 "Episódios"
+    const epSection = epGrid?.closest("section");
+    if (epSection) epSection.style.display = "none";
     return;
   }
 
@@ -1676,7 +1699,10 @@ function renderPlayer() {
   const shell = document.querySelector(".player-shell");
   videoPlayer.addEventListener("play", () => {
     const alvo = shell || videoPlayer;
-    if (!document.fullscreenElement) alvo.requestFullscreen?.().catch(() => alvo.webkitRequestFullscreen?.());
+    if (!document.fullscreenElement) {
+      alvo.requestFullscreen?.().catch(() => alvo.webkitRequestFullscreen?.())
+        .catch?.(() => videoPlayer.webkitRequestFullscreen?.());
+    }
   }, { once:true });
 
   const params    = new URLSearchParams(location.search);
@@ -1878,6 +1904,43 @@ function renderPlayer() {
     btnSkip.onclick = () => { videoPlayer.currentTime = Math.min(videoPlayer.currentTime + 60, videoPlayer.duration - 1); };
   }
 
+  // Garante que os botões flutuantes aparecem dentro do fullscreen element
+  function moverBotoesFullscreen() {
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    const shell = document.querySelector(".player-shell");
+    [btnSkip, btnNext].forEach(btn => {
+      if (!btn) return;
+      if (fsEl && shell && fsEl === shell) {
+        shell.appendChild(btn);
+      }
+    });
+  }
+  document.addEventListener("fullscreenchange",       moverBotoesFullscreen);
+  document.addEventListener("webkitfullscreenchange", moverBotoesFullscreen);
+
+  // Zoom por pinça no vídeo (mobile) e scroll (desktop)
+  let videoScale = 1;
+  let lastDist   = null;
+  function aplicarZoom(scale) {
+    videoScale = Math.min(3, Math.max(1, scale));
+    videoPlayer.style.transform = videoScale > 1 ? `scale(${videoScale})` : "";
+  }
+  videoPlayer.addEventListener("touchstart", e => {
+    if (e.touches.length === 2) lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+  }, { passive: true });
+  videoPlayer.addEventListener("touchmove", e => {
+    if (e.touches.length !== 2 || !lastDist) return;
+    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    aplicarZoom(videoScale * (dist / lastDist));
+    lastDist = dist;
+  }, { passive: true });
+  videoPlayer.addEventListener("touchend", () => { lastDist = null; });
+  videoPlayer.addEventListener("wheel", e => {
+    if (!document.fullscreenElement) return;
+    e.preventDefault();
+    aplicarZoom(videoScale + (e.deltaY < 0 ? 0.1 : -0.1));
+  }, { passive: false });
+
   let saveTimer = null;
   function salvar() {
     if (!videoPlayer.duration || isNaN(videoPlayer.duration)) return;
@@ -1941,9 +2004,21 @@ function renderAoVivoPage() { renderCanaisAoVivo("canaisGrid", catalogoData?.aoV
 function iniciarBusca() {
   const input = document.getElementById("searchInput");
   if (!input) return;
+  // Na home, o clique no campo redireciona para a tela de busca
+  const naHome = !!document.getElementById("rowDestaques");
+  if (naHome) {
+    input.addEventListener("focus", () => { window.location.href = "busca.html"; });
+    input.addEventListener("click",  () => { window.location.href = "busca.html"; });
+    return;
+  }
+  // Na tela de busca usa normalmente
   input.addEventListener("input", () => {
     const t = input.value.toLowerCase().trim();
-    document.querySelectorAll(".poster-card").forEach(c => c.classList.toggle("hidden", !!(t && !c.dataset.titulo?.includes(t))));
+    document.querySelectorAll(".poster-card, .busca-card").forEach(c => {
+      c.closest(".busca-item")
+        ? c.closest(".busca-item").classList.toggle("hidden", !!(t && !c.dataset.titulo?.includes(t)))
+        : c.classList.toggle("hidden", !!(t && !c.dataset.titulo?.includes(t)));
+    });
   });
 }
 
@@ -1957,6 +2032,16 @@ function iniciarFiltros() {
       .forEach(c => c.classList.toggle("hidden", f !== "todos" && c.dataset.tipo !== f));
   }));
 }
+
+// ─── Bloquear zoom da página (Ctrl+scroll, Ctrl+/-/0) ────────────────────────
+(function bloquearZoomPagina() {
+  const naPlayer = !!document.getElementById("videoPlayer");
+  if (naPlayer) return; // player precisa de zoom
+  document.addEventListener("wheel", e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+  document.addEventListener("keydown", e => {
+    if (e.ctrlKey && (e.key === "+" || e.key === "-" || e.key === "=" || e.key === "0")) e.preventDefault();
+  });
+})();
 
 // ─── Menu mobile ─────────────────────────────────────────────────────────────
 function iniciarMenuMobile() {
@@ -1990,4 +2075,5 @@ function configurarUsuario() {
   renderAulasPage();
   renderMangasPage();
   iniciarMenuMobile();
+  iniciarBusca();
 })();
