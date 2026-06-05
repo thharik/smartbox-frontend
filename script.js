@@ -1100,9 +1100,11 @@ async function carregarCatalogo() {
 }
 
 async function carregarUserData() {
-  // Carrega sempre do cache local primeiro (garante favoritos offline)
-  const favCache = ls.get("sb_fav_cache");
+  // Carrega sempre do cache local primeiro (garante dados offline)
+  const favCache      = ls.get("sb_fav_cache");
+  const continuarCache = ls.get("sb_continuar_cache") || [];
   if (favCache) userData.favoritos = favCache;
+  if (continuarCache.length) userData.continuarAssistindo = continuarCache;
 
   if (!getPerfilId()) return;
   const [favs, continuar] = await Promise.all([
@@ -1111,12 +1113,27 @@ async function carregarUserData() {
   ]);
   if (favs) {
     userData.favoritos = favs.map(f => f.id || f.conteudo_id);
-    // Mescla com cache local (itens offline que ainda não sincronizaram)
     const local = ls.get("sb_fav_cache") || [];
     local.forEach(id => { if (!userData.favoritos.includes(id)) userData.favoritos.push(id); });
     ls.set("sb_fav_cache", userData.favoritos);
   }
-  if (continuar) userData.continuarAssistindo = continuar;
+  if (continuar && continuar.length) {
+    // Mescla: API pode não ter capa/poster, usa cache local para preencher os campos que faltam
+    const cache = ls.get("sb_continuar_cache") || [];
+    userData.continuarAssistindo = continuar.map(apiItem => {
+      const local = cache.find(c => c.episodio_id === (apiItem.episodio_id || apiItem.episodioId));
+      return {
+        ...apiItem,
+        capa:      apiItem.capa      || local?.capa      || local?.poster || "",
+        poster:    apiItem.poster    || local?.poster    || "",
+        titulo:    apiItem.titulo    || local?.titulo    || "",
+        ep_titulo: apiItem.ep_titulo || local?.ep_titulo || "",
+        updated_at: apiItem.updated_at || local?.updated_at || 0,
+      };
+    });
+    // Atualiza cache local com dados mesclados
+    ls.set("sb_continuar_cache", userData.continuarAssistindo.slice(0, 20));
+  }
 }
 
 // ─── Múltiplos perfis ─────────────────────────────────────────────────────────
@@ -1413,21 +1430,27 @@ function renderContinuarAssistindo() {
     const restanteMin = Math.max(0, Math.round(restanteSeg / 60));
     const restanteTxt = restanteMin > 1 ? `${restanteMin} min` : "Finalizado";
 
-    // Usa capa do episódio (cena) se disponível, senão poster da série
-    const imgSrc = item.capa || item.poster || "assets/posters/placeholder.jpg";
+    // Busca dados do catálogo em memória como fallback
+    const { item: catalogItem } = buscarItemEmTodoCatalogo(item.conteudo_id);
+    const epCatalog = catalogItem?.temporadas?.flatMap(t => t.episodios || []).find(e => e.id === item.episodio_id);
+
+    // Usa capa do episódio (cena onde parou), senão poster da série
+    const imgSrc = item.capa || epCatalog?.capa || item.poster || catalogItem?.poster || "assets/posters/placeholder.jpg";
+    const tituloExib  = item.titulo    || catalogItem?.titulo    || "Sem título";
+    const epTituloExib = item.ep_titulo || epCatalog?.titulo     || "";
 
     const bloco = document.createElement("div");
     bloco.className = "continuar-card-h";
     bloco.innerHTML = `
       <a href="${link}" class="continuar-card-h-link">
         <div class="continuar-card-h-thumb">
-          <img src="${imgSrc}" alt="${item.titulo || ""}">
+          <img src="${imgSrc}" alt="${tituloExib}">
           <div class="continuar-play-icon">▶</div>
           <div class="continuar-card-h-bar"><div class="continuar-card-h-fill" style="width:${pct}%"></div></div>
         </div>
         <div class="continuar-card-h-info">
-          <p class="continuar-card-h-titulo">${item.titulo || "Sem título"}</p>
-          <p class="continuar-card-h-ep">${item.ep_titulo || ""}</p>
+          <p class="continuar-card-h-titulo">${tituloExib}</p>
+          <p class="continuar-card-h-ep">${epTituloExib}</p>
           <p class="continuar-card-h-resto">${restanteTxt}</p>
         </div>
       </a>
@@ -1918,34 +1941,108 @@ function renderPlayer() {
   document.addEventListener("fullscreenchange",       moverBotoesFullscreen);
   document.addEventListener("webkitfullscreenchange", moverBotoesFullscreen);
 
-  // Zoom por pinça no vídeo (mobile) e scroll (desktop)
+  // Zoom por pinça no vídeo (mobile) e scroll (desktop) — só na tela cheia
+  // scale=1 → object-fit:contain (padrão), scale>1 → aumenta via transform
   let videoScale = 1;
   let lastDist   = null;
-  function aplicarZoom(scale) {
-    videoScale = Math.min(3, Math.max(1, scale));
-    videoPlayer.style.transform = videoScale > 1 ? `scale(${videoScale})` : "";
+  let pinchActive = false;
+
+  function aplicarZoom(novoScale) {
+    videoScale = Math.min(3, Math.max(1, novoScale));
+    if (videoScale <= 1) {
+      videoPlayer.style.transform  = "";
+      videoPlayer.style.objectFit  = "contain";
+    } else {
+      videoPlayer.style.transform  = `scale(${videoScale})`;
+      videoPlayer.style.objectFit  = "cover";
+    }
   }
+
+  // Touch — pinça
   videoPlayer.addEventListener("touchstart", e => {
-    if (e.touches.length === 2) lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-  }, { passive: true });
+    if (e.touches.length === 2) {
+      pinchActive = true;
+      lastDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      e.preventDefault(); // evita scroll da página durante pinça
+    }
+  }, { passive: false });
+
   videoPlayer.addEventListener("touchmove", e => {
-    if (e.touches.length !== 2 || !lastDist) return;
-    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    if (!pinchActive || e.touches.length !== 2 || !lastDist) return;
+    e.preventDefault();
+    const dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
     aplicarZoom(videoScale * (dist / lastDist));
     lastDist = dist;
-  }, { passive: true });
-  videoPlayer.addEventListener("touchend", () => { lastDist = null; });
-  videoPlayer.addEventListener("wheel", e => {
-    if (!document.fullscreenElement) return;
-    e.preventDefault();
-    aplicarZoom(videoScale + (e.deltaY < 0 ? 0.1 : -0.1));
   }, { passive: false });
+
+  videoPlayer.addEventListener("touchend", e => {
+    if (e.touches.length < 2) { pinchActive = false; lastDist = null; }
+  });
+
+  // Scroll com Ctrl no desktop — só se estiver em fullscreen
+  videoPlayer.addEventListener("wheel", e => {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) return;
+    e.preventDefault();
+    aplicarZoom(videoScale + (e.deltaY < 0 ? 0.15 : -0.15));
+  }, { passive: false });
+
+  // Reset zoom ao sair do fullscreen
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) aplicarZoom(1);
+  });
+  document.addEventListener("webkitfullscreenchange", () => {
+    if (!document.webkitFullscreenElement) aplicarZoom(1);
+  });
 
   let saveTimer = null;
   function salvar() {
     if (!videoPlayer.duration || isNaN(videoPlayer.duration)) return;
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => salvarProgresso({ episodioId: episodioIdAtual, conteudoId: item.id, currentTime: Math.floor(videoPlayer.currentTime), duration: Math.floor(videoPlayer.duration) }), 500);
+    saveTimer = setTimeout(() => {
+      const epAtual = getEpisodioAtual();
+      const payload = {
+        episodioId:  episodioIdAtual,
+        conteudoId:  item.id,
+        currentTime: Math.floor(videoPlayer.currentTime),
+        duration:    Math.floor(videoPlayer.duration),
+        // Campos extras para o "continuar assistindo"
+        titulo:    item.titulo    || "",
+        ep_titulo: epAtual?.titulo || "",
+        poster:    item.poster    || "",
+        capa:      epAtual?.capa  || item.poster || "",
+      };
+
+      // Salva imediatamente no cache local (não espera a API)
+      const cache = ls.get("sb_continuar_cache") || [];
+      const idx   = cache.findIndex(x => x.episodio_id === episodioIdAtual || x.episodioId === episodioIdAtual);
+      const entry = {
+        episodio_id:  episodioIdAtual,
+        conteudo_id:  item.id,
+        current_time: payload.currentTime,
+        duration:     payload.duration,
+        titulo:       payload.titulo,
+        ep_titulo:    payload.ep_titulo,
+        poster:       payload.poster,
+        capa:         payload.capa,
+        updated_at:   Date.now(),
+      };
+      if (idx >= 0) cache.splice(idx, 1);
+      cache.unshift(entry); // mais recente primeiro
+      ls.set("sb_continuar_cache", cache.slice(0, 20));
+
+      // Atualiza userData em memória para refletir imediatamente
+      const idxMem = (userData.continuarAssistindo || []).findIndex(x => x.episodio_id === episodioIdAtual);
+      if (idxMem >= 0) userData.continuarAssistindo.splice(idxMem, 1);
+      userData.continuarAssistindo = [entry, ...(userData.continuarAssistindo || [])];
+
+      salvarProgresso(payload);
+    }, 500);
   }
 
   videoPlayer.addEventListener("timeupdate", () => {
