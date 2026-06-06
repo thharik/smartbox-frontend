@@ -20,11 +20,9 @@ async function apiFetch(path, opts = {}) {
   try {
     const r = await fetch(API + path, opts);
     if (r.status === 401) { logout(); return null; }
-    // 402 = sem assinatura ativa: redireciona para login mostrando banner
-    if (r.status === 402) {
-      window.location.href = "login.html?sem_assinatura=1";
-      return null;
-    }
+    if (r.status === 402) { window.location.href = "login.html?sem_assinatura=1"; return null; }
+    if (r.status === 403) return null; // sem perfil selecionado ou sem permissão
+    if (!r.ok) return null;            // qualquer outro erro HTTP
     return await r.json();
   } catch {
     return null;
@@ -1111,13 +1109,13 @@ async function carregarUserData() {
     apiFetch("/favoritos",           { headers: headers(true) }),
     apiFetch("/progresso/continuar", { headers: headers(true) }),
   ]);
-  if (favs) {
+  if (favs && Array.isArray(favs)) {
     userData.favoritos = favs.map(f => f.id || f.conteudo_id);
     const local = ls.get("sb_fav_cache") || [];
     local.forEach(id => { if (!userData.favoritos.includes(id)) userData.favoritos.push(id); });
     ls.set("sb_fav_cache", userData.favoritos);
   }
-  if (continuar && continuar.length) {
+  if (continuar && Array.isArray(continuar) && continuar.length) {
     // Mescla: API pode não ter capa/poster, usa cache local para preencher os campos que faltam
     const cache = ls.get("sb_continuar_cache") || [];
     userData.continuarAssistindo = continuar.map(apiItem => {
@@ -1137,14 +1135,21 @@ async function carregarUserData() {
 }
 
 // ─── Múltiplos perfis ─────────────────────────────────────────────────────────
-async function mostrarTelaPerfis() {
-  const perfis = await apiFetch("/perfis", { headers: headers() });
-  if (!perfis) return;
-  if (perfis.length === 1 && !perfis[0].tem_pin) { selecionarPerfil(perfis[0]); return; }
+function mostrarTelaPerfis() {
+  return new Promise(async (resolve) => {
+    const perfis = await apiFetch("/perfis", { headers: headers() });
+    if (!perfis || !Array.isArray(perfis) || !perfis.length) { resolve(); return; }
 
-  const overlay = document.createElement("div");
-  overlay.id = "perfilOverlay";
-  overlay.style.cssText = "position:fixed;inset:0;background:#111;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;";
+    // 1 perfil sem PIN: seleciona direto e resolve imediatamente
+    if (perfis.length === 1 && !perfis[0].tem_pin) {
+      selecionarPerfil(perfis[0]);
+      resolve();
+      return;
+    }
+
+    const overlay = document.createElement("div");
+    overlay.id = "perfilOverlay";
+    overlay.style.cssText = "position:fixed;inset:0;background:#111;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;";
   overlay.innerHTML = `
     <h1 style="font-size:28px;color:#fff;font-weight:500">Quem está assistindo?</h1>
     <div id="perfilGrid" style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center"></div>
@@ -1161,7 +1166,10 @@ async function mostrarTelaPerfis() {
     `;
     btn.addEventListener("mouseenter", () => btn.querySelector(".perfil-avatar").style.borderColor = "#e50914");
     btn.addEventListener("mouseleave", () => btn.querySelector(".perfil-avatar").style.borderColor = "transparent");
-    btn.addEventListener("click", () => { if (p.tem_pin) pedirPin(p, overlay); else { selecionarPerfil(p); overlay.remove(); } });
+    btn.addEventListener("click", () => {
+      if (p.tem_pin) pedirPin(p, overlay, resolve);
+      else { selecionarPerfil(p); overlay.remove(); resolve(); }
+    });
     grid.appendChild(btn);
   });
   if (perfis.length < 4) {
@@ -1171,11 +1179,12 @@ async function mostrarTelaPerfis() {
     btnNovo.addEventListener("click", () => abrirModalCriarPerfil(overlay));
     grid.appendChild(btnNovo);
   }
-  overlay.querySelector("#btnGerenciarPerfis").addEventListener("click", () => abrirModalCriarPerfil(overlay));
+  overlay.querySelector("#btnGerenciarPerfis").addEventListener("click", () => abrirModalCriarPerfil(overlay, resolve));
   document.body.appendChild(overlay);
+  })
 }
 
-function pedirPin(perfil, overlay) {
+function pedirPin(perfil, overlay, resolve) {
   const modal = document.createElement("div");
   modal.style.cssText = "position:absolute;inset:0;background:rgba(0,0,0,.8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;";
   modal.innerHTML = `
@@ -1191,13 +1200,13 @@ function pedirPin(perfil, overlay) {
   modal.querySelector("#btnConfirmarPin").addEventListener("click", async () => {
     const pin = modal.querySelector("#pinInput").value;
     const ok  = await apiFetch(`/perfis/${perfil.id}/pin`, { method:"POST", headers:headers(), body:JSON.stringify({ pin }) });
-    if (ok?.ok) { selecionarPerfil(perfil); overlay.remove(); }
+    if (ok?.ok) { selecionarPerfil(perfil); overlay.remove(); resolve(); }
     else modal.querySelector("#pinErro").textContent = "PIN incorreto. Tente novamente.";
   });
   overlay.appendChild(modal);
 }
 
-function abrirModalCriarPerfil(overlay) {
+function abrirModalCriarPerfil(overlay, resolve) {
   const modal = document.createElement("div");
   modal.style.cssText = "position:absolute;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;";
   modal.innerHTML = `
@@ -1222,7 +1231,7 @@ function abrirModalCriarPerfil(overlay) {
     const infantil = modal.querySelector("#infantilCheck").checked;
     if (!nome) { modal.querySelector("#perfilModalErro").textContent = "Nome obrigatório"; return; }
     const res = await apiFetch("/perfis", { method:"POST", headers:headers(), body:JSON.stringify({ nome, pin: pin || undefined, infantil }) });
-    if (res?.id) { modal.remove(); overlay.remove(); mostrarTelaPerfis(); }
+    if (res?.id) { modal.remove(); overlay.remove(); resolve(); }
     else modal.querySelector("#perfilModalErro").textContent = res?.mensagem || "Erro ao criar perfil";
   });
   overlay.appendChild(modal);
