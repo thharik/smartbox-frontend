@@ -3,6 +3,40 @@ html, body { max-width: 100%; overflow-x: hidden; }
 body { background: #141414; color: white; font-family: Arial, sans-serif; }
 a { text-decoration: none; color: white; }
 
+/* ── Botão lupa (mobile) ── */
+.search-icon-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+  line-height: 1;
+}
+.search-icon-btn:hover { background: #222; }
+
+/* ── Proteção de conteúdo ── */
+img, video {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  pointer-events: none;
+}
+/* Reativar pointer-events no vídeo para os controles funcionarem */
+#videoPlayer,
+.video-click-zone {
+  pointer-events: auto;
+}
+.poster-card,
+.continuar-card-h,
+.busca-item,
+.ep-card {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* ── Topbar ── */
 .topbar {
   display: grid;
@@ -282,7 +316,8 @@ a { text-decoration: none; color: white; }
   .main-nav a { font-size: 17px; }
 
   .header-right { flex-direction: row; gap: 10px; }
-  .search-box input { width: 150px; }
+  .search-box { display: none; }
+  .search-icon-btn { display: block; }
 
   .container { padding: 16px; }
   .poster-card { min-width: 140px; max-width: 140px; }
@@ -299,6 +334,7 @@ a { text-decoration: none; color: white; }
 
 @media (max-width: 480px) {
   .search-box { display: none; }
+  .search-icon-btn { display: block; }
   .poster-card { min-width: 120px; max-width: 120px; }
   .poster-card img { height: 170px; }
   .continuar-card-h { width: 150px; }
