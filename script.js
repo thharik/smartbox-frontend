@@ -603,10 +603,23 @@ function renderDetalhe() {
 
   atualizarBotaoFavorito(item.id);
   if (btnFav)  btnFav.onclick = () => alternarFavorito(item.id);
-  if (btnPlay) btnPlay.onclick = () => {
-    if (!primeiroEp) { alert("Nenhum episódio disponível."); return; }
-    if (!primeiroEp.video) { alert("Vídeo não configurado."); return; }
-    window.location.href = `assistir.html?serie=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(catReal)}&temporada=${primeiraTemp.numero}&episodio=${encodeURIComponent(primeiroEp.id)}&autoplay=1`;
+  if (btnPlay) btnPlay.onclick = async () => {
+
+    sessionStorage.setItem("tvxbox_fullscreen", "1");
+
+    if (!primeiroEp) {
+      alert("Nenhum episódio disponível.");
+      return;
+    }
+
+    if (!primeiroEp.video) {
+      alert("Vídeo não configurado.");
+      return;
+    }
+
+    window.location.href =
+      `assistir.html?serie=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(catReal)}&temporada=${primeiraTemp.numero}&episodio=${encodeURIComponent(primeiroEp.id)}&autoplay=1`;
+
   };
 
   // Filmes com 1 ep não precisam de grade
@@ -636,6 +649,7 @@ function renderDetalhe() {
       tempSel.appendChild(opt);
     });
   }
+  
 
   function mostrarEps(num) {
     const temp = item.temporadas.find(t => t.numero == num);
@@ -746,11 +760,7 @@ function renderPlayer() {
   const shell = document.querySelector(".player-shell");
 
   function entrarFullscreenEPlay() {
-    const alvo = shell || videoPlayer;
-    const fsPromise = alvo.requestFullscreen?.() ?? alvo.webkitRequestFullscreen?.();
-    Promise.resolve(fsPromise).catch(() => {}).finally(() => {
-      videoPlayer.play().catch(() => {});
-    });
+    videoPlayer.play().catch(() => {});
   }
 
   // Dispara assim que o vídeo estiver pronto para tocar
