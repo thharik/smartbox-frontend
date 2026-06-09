@@ -649,7 +649,7 @@ function renderDetalhe() {
       tempSel.appendChild(opt);
     });
   }
-  
+
 
   function mostrarEps(num) {
     const temp = item.temporadas.find(t => t.numero == num);
@@ -741,6 +741,8 @@ function instalarPreviewProgressbar(videoEl) {
 function renderPlayer() {
   const playerInfo  = document.getElementById("playerInfo");
   const videoPlayer = document.getElementById("videoPlayer");
+  const fullscreenSolicitado =
+    sessionStorage.getItem("tvxbox_fullscreen") === "1";
   const btnSkip     = document.getElementById("btnSkipIntro");
   const btnNext     = document.getElementById("btnNextEpisode");
   const clickZone   = document.getElementById("videoClickZone");
@@ -827,6 +829,21 @@ function renderPlayer() {
       // Só retoma se tiver progresso e não tiver terminado (< 95%)
       if (salvo?.current_time && salvo?.duration && (salvo.current_time / salvo.duration) < 0.95) {
         videoPlayer.currentTime = salvo.current_time;
+      }
+      if (fullscreenSolicitado) {
+
+        const shell = document.querySelector(".player-shell");
+
+        setTimeout(() => {
+
+          (shell || videoPlayer)
+            .requestFullscreen?.()
+            .catch(() => {});
+
+          sessionStorage.removeItem("tvxbox_fullscreen");
+
+        }, 300);
+
       }
     }, { once: true });
 
