@@ -1,4 +1,4 @@
- // ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 const ls = {
   get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
   set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
@@ -111,11 +111,23 @@ function mesclarCanais(base, extras) {
 }
 
 async function carregarCatalogo() {
+  // ── Renderiza cache imediatamente para não ter tela em branco ─────────────
+  const cacheLocal = ls.get("sb_catalogo_cache");
+  if (cacheLocal) {
+    catalogoData = cacheLocal;
+    catalogoData.aoVivo = mesclarCanais(catalogoData.aoVivo || [], CANAIS_BUILTIN);
+    // Renderiza já com o cache enquanto busca dados frescos
+    renderHome();
+    renderDetalhe();
+    renderAoVivoPage();
+    renderAulasPage();
+    renderMangasPage();
+  }
+
   if (navigator.onLine) {
     const data = await apiFetch("/catalogo", { headers: headers() });
     if (data) {
       catalogoData = normalizarCatalogo(data);
-      // Canais builtin só aparecem com assinatura ativa (data != null)
       catalogoData.aoVivo = mesclarCanais(catalogoData.aoVivo || [], CANAIS_BUILTIN);
       try {
         const canaisExt = await apiFetch("/canais", { headers: headers() });
@@ -123,17 +135,18 @@ async function carregarCatalogo() {
         catalogoData.aoVivo = mesclarCanais(catalogoData.aoVivo, extras);
       } catch { /* ignora */ }
       ls.set("sb_catalogo_cache", catalogoData);
+      // Re-renderiza com dados frescos da API
+      renderHome();
+      renderDetalhe();
+      renderAoVivoPage();
+      renderAulasPage();
+      renderMangasPage();
       return;
     }
-    // data==null: pode ser 402 (sem assinatura) — redirecionamento já feito no apiFetch
     return;
   }
-  // Fallback offline: só usa cache salvo de sessão anterior (usuário já tinha assinatura)
-  const cache = ls.get("sb_catalogo_cache");
-  if (cache) {
-    catalogoData = cache;
-    catalogoData.aoVivo = mesclarCanais(catalogoData.aoVivo || [], CANAIS_BUILTIN);
-  } else {
+  // Fallback offline
+  if (!cacheLocal) {
     catalogoData = { destaques:[], animes:[], series:[], aoVivo:[], mangas:[], aulas:[] };
   }
 }
@@ -330,12 +343,41 @@ function removerPreview() {
 function criarCard(item, onClick) {
   const card = document.createElement("div");
   card.className = "poster-card";
-  card.dataset.titulo = (item.titulo || "").toLowerCase();
-  card.dataset.tipo   = item.tipo || "";
+  card.dataset.titulo    = (item.titulo || "").toLowerCase();
+  card.dataset.tipo      = item.tipo || "";
+  card.dataset.genero    = (item.generos || []).join(" ").toLowerCase();
+  card.dataset.descricao = (item.descricao || "").toLowerCase().slice(0, 200);
+
+  // Lazy load com fade-in suave
+  const posterSrc = item.poster || "assets/posters/placeholder.jpg";
   card.innerHTML = `
-    <img src="${item.poster || "assets/posters/placeholder.jpg"}" alt="${item.titulo}" loading="lazy">
+    <img
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+      data-src="${posterSrc}"
+      alt="${item.titulo}"
+      style="opacity:0;transition:opacity .3s ease;"
+      loading="lazy"
+    >
     <div class="info"><h3>${item.titulo}</h3><p>${item.tipo || ""}</p></div>
   `;
+
+  // IntersectionObserver para carregar imagem quando o card aparecer
+  const img = card.querySelector("img");
+  if ("IntersectionObserver" in window) {
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        img.src = posterSrc;
+        img.onload = () => { img.style.opacity = "1"; };
+        img.onerror = () => { img.src = "assets/posters/placeholder.jpg"; img.style.opacity = "1"; };
+        obs.disconnect();
+      }
+    }, { rootMargin: "200px" }); // começa a carregar 200px antes de aparecer
+    obs.observe(card);
+  } else {
+    img.src = posterSrc;
+    img.style.opacity = "1";
+  }
+
   card.addEventListener("click", onClick);
   if (window.matchMedia("(hover:hover)").matches) {
     card.addEventListener("mouseenter", () => { previewTimeout = setTimeout(() => criarPreview(item, card), 500); });
@@ -359,7 +401,7 @@ function renderRow(idContainer, lista, tipoClique) {
   lista.forEach(item => {
     let acao = () => window.location.href = `detalhe.html?id=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(idContainer)}`;
     if (tipoClique === "aoVivo") {
-      acao = () => item.video ? (window.location.href = `assistir.html?canal=${encodeURIComponent(item.id)}`) : alert("Vídeo não configurado.");
+      acao = () => item.video ? (window.location.href = `assistir.html?canal=${encodeURIComponent(item.id)}`) : mostrarToast("Vídeo não configurado.", "warn");
     }
     container.appendChild(criarCard(item, acao));
   });
@@ -396,14 +438,17 @@ async function alternarFavorito(itemId) {
   if (res !== null) {
     if (res.favoritado) {
       if (!userData.favoritos.includes(itemId)) userData.favoritos.push(itemId);
+      mostrarToast("Adicionado à sua lista", "success");
     } else {
       userData.favoritos = userData.favoritos.filter(x => x !== itemId);
+      mostrarToast("Removido da sua lista", "info");
     }
     ls.set("sb_fav_cache", userData.favoritos);
   } else {
     const favs = ls.get("sb_fav_cache") || [];
     const idx = favs.indexOf(itemId);
-    if (idx === -1) favs.push(itemId); else favs.splice(idx, 1);
+    if (idx === -1) { favs.push(itemId); mostrarToast("Adicionado à sua lista", "success"); }
+    else { favs.splice(idx, 1); mostrarToast("Removido da sua lista", "info"); }
     ls.set("sb_fav_cache", favs);
     userData.favoritos = favs;
   }
@@ -430,7 +475,7 @@ function renderFavoritos() {
   itens.forEach(item => {
     const ehCanal = (catalogoData?.aoVivo || []).find(x => x.id === item.id);
     if (ehCanal) {
-      row.appendChild(criarCard(item, () => item.video ? (window.location.href=`assistir.html?canal=${encodeURIComponent(item.id)}`) : alert("Vídeo não configurado.")));
+      row.appendChild(criarCard(item, () => item.video ? (window.location.href=`assistir.html?canal=${encodeURIComponent(item.id)}`) : mostrarToast("Vídeo não configurado.", "warn")));
       return;
     }
     const { cat } = buscarItemEmTodoCatalogo(item.id);
@@ -451,8 +496,13 @@ async function salvarProgresso(payload) {
 window.addEventListener("online", async () => {
   const fila = ls.get("sb_fila_sync") || [];
   if (!fila.length) return;
-  for (const item of fila) await apiFetch("/progresso", { method:"POST", headers:headers(true), body:JSON.stringify(item) });
-  ls.del("sb_fila_sync");
+  const falhas = [];
+  for (const item of fila) {
+    const ok = await apiFetch("/progresso", { method:"POST", headers:headers(true), body:JSON.stringify(item) });
+    if (!ok) falhas.push(item); // mantém os que falharam para tentar depois
+  }
+  if (falhas.length) ls.set("sb_fila_sync", falhas);
+  else ls.del("sb_fila_sync");
 });
 
 // ─── Continuar assistindo ─────────────────────────────────────────────────────
@@ -558,19 +608,218 @@ async function abrirCapitulosManga(manga) {
   btnVoltar.addEventListener("click", () => { capBox.classList.add("hidden"); window.scrollTo({ top:0, behavior:"smooth" }); }, { once:true });
 }
 
-function abrirLeitorManga(cap, manga) {
-  const overlay   = document.getElementById("mangaReaderOverlay");
-  const frame     = document.getElementById("readerFrame");
-  const titulo    = document.getElementById("readerTitulo");
-  const btnFechar = document.getElementById("btnReaderFechar");
-  if (!overlay || !frame) return;
-  const pdfUrl = cap.pdfUrl?.startsWith("http") ? cap.pdfUrl : `${API}/video/pdf/${cap.pdfUrl}`;
-  titulo.textContent = `${manga.titulo} — Cap. ${cap.numero}: ${cap.titulo}`;
-  frame.src = pdfUrl;
-  overlay.classList.add("ativo");
+// ─── Leitor de Mangá (PDF.js) ─────────────────────────────────────────────────
+// Renderiza páginas como imagens via PDF.js — muito mais rápido que iframe PDF
+let _pdfDoc       = null;
+let _pdfRendering = false;
+let _pdfPageQueue = [];
+let _pdfCanvases  = [];
+let _pdfObserver  = null;
+let _pdfCapAtual  = null;
+let _pdfMangaAtual = null;
+
+async function _garantirPdfJs() {
+  if (window.pdfjsLib) return true;
+  return new Promise(resolve => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    s.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      resolve(true);
+    };
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
+}
+
+async function abrirLeitorManga(cap, manga) {
+  _pdfCapAtual   = cap;
+  _pdfMangaAtual = manga;
+
+  // ── Monta/reutiliza overlay ───────────────────────────────────────────────
+  let overlay = document.getElementById("mangaReaderOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "mangaReaderOverlay";
+    overlay.style.cssText = "display:none;position:fixed;inset:0;background:#111;z-index:9999;flex-direction:column;";
+    document.body.appendChild(overlay);
+  }
+
+  overlay.innerHTML = `
+    <div id="mangaReaderHeader" style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:#0d0d0d;border-bottom:1px solid #222;flex-shrink:0;">
+      <button id="btnReaderFechar" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:4px 8px;">✕</button>
+      <div style="flex:1;min-width:0;">
+        <div id="readerTitulo" style="color:#fff;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+        <div id="readerPaginaInfo" style="color:#888;font-size:12px;margin-top:2px;"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+        <button id="btnPagAnterior" style="background:#222;border:1px solid #333;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;">◀</button>
+        <button id="btnPagProxima"  style="background:#e50914;border:none;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;">▶</button>
+      </div>
+    </div>
+    <div id="mangaReaderLoading" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+      <div style="width:40px;height:40px;border:3px solid #333;border-top-color:#e50914;border-radius:50%;animation:spin .8s linear infinite;"></div>
+      <p style="color:#888;font-size:14px;" id="mangaLoadingMsg">Carregando capítulo...</p>
+    </div>
+    <div id="mangaReaderPages" style="display:none;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;"></div>
+    <style>
+      @keyframes spin { to { transform:rotate(360deg); } }
+      .manga-page-wrap { width:100%;display:flex;justify-content:center;align-items:flex-start;padding:4px 0;background:#111; }
+      .manga-page-wrap canvas { max-width:100%;height:auto;display:block; }
+      .manga-page-skeleton { width:100%;aspect-ratio:0.7;background:linear-gradient(90deg,#1a1a1a 25%,#242424 50%,#1a1a1a 75%);background-size:200% 100%;animation:shimmer 1.4s infinite; }
+      @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    </style>
+  `;
+
+  overlay.style.display = "flex";
   document.body.style.overflow = "hidden";
-  overlay.requestFullscreen?.().catch(() => {});
-  btnFechar.onclick = () => { overlay.classList.remove("ativo"); frame.src=""; document.body.style.overflow=""; if (document.fullscreenElement) document.exitFullscreen?.(); };
+
+  const pdfUrl = cap.pdfUrl?.startsWith("http") ? cap.pdfUrl : `${API}/video/pdf/${encodeURIComponent(cap.pdfUrl)}`;
+  document.getElementById("readerTitulo").textContent = `${manga.titulo} — Cap. ${cap.numero}: ${cap.titulo}`;
+
+  // ── Fecha ─────────────────────────────────────────────────────────────────
+  function fechar() {
+    overlay.style.display = "none";
+    document.body.style.overflow = "";
+    if (_pdfObserver) { _pdfObserver.disconnect(); _pdfObserver = null; }
+    if (_pdfDoc) { _pdfDoc.destroy(); _pdfDoc = null; }
+    _pdfCanvases = [];
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  }
+  document.getElementById("btnReaderFechar").onclick = fechar;
+
+  // Fecha com Escape
+  const onKey = e => { if (e.key === "Escape") { fechar(); document.removeEventListener("keydown", onKey); } };
+  document.addEventListener("keydown", onKey);
+
+  // ── Carrega PDF.js ────────────────────────────────────────────────────────
+  const ok = await _garantirPdfJs();
+  if (!ok) {
+    document.getElementById("mangaLoadingMsg").textContent = "Erro ao carregar leitor. Tente recarregar a página.";
+    return;
+  }
+
+  // ── Carrega o PDF ─────────────────────────────────────────────────────────
+  let pdfDoc;
+  try {
+    document.getElementById("mangaLoadingMsg").textContent = "Baixando capítulo...";
+    pdfDoc = await pdfjsLib.getDocument({ url: pdfUrl, cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/", cMapPacked: true }).promise;
+    _pdfDoc = pdfDoc;
+  } catch(e) {
+    console.error("PDF load error:", e);
+    document.getElementById("mangaLoadingMsg").textContent = "Erro ao carregar o PDF. Verifique a URL ou tente novamente.";
+    return;
+  }
+
+  const totalPaginas = pdfDoc.numPages;
+  document.getElementById("mangaLoadingMsg").textContent = `Preparando ${totalPaginas} páginas...`;
+
+  const pagesContainer = document.getElementById("mangaReaderPages");
+  const loadingEl      = document.getElementById("mangaReaderLoading");
+  const paginaInfoEl   = document.getElementById("readerPaginaInfo");
+
+  // ── Descobre último progresso ─────────────────────────────────────────────
+  const progCache = ls.get("sb_manga_prog_cache") || {};
+  const paginaInicial = Math.min(progCache[cap.id] || 1, totalPaginas);
+
+  // ── Cria skeletons para todas as páginas ──────────────────────────────────
+  _pdfCanvases = [];
+  const fragment = document.createDocumentFragment();
+  for (let i = 1; i <= totalPaginas; i++) {
+    const wrap = document.createElement("div");
+    wrap.className = "manga-page-wrap";
+    wrap.dataset.page = i;
+    const skeleton = document.createElement("div");
+    skeleton.className = "manga-page-skeleton";
+    wrap.appendChild(skeleton);
+    fragment.appendChild(wrap);
+    _pdfCanvases.push(wrap);
+  }
+  pagesContainer.appendChild(fragment);
+
+  loadingEl.style.display    = "none";
+  pagesContainer.style.display = "flex";
+  pagesContainer.style.flexDirection = "column";
+
+  // ── Renderiza uma página num canvas ──────────────────────────────────────
+  const renderQueue = new Set();
+  async function renderPagina(num) {
+    if (renderQueue.has(num)) return;
+    renderQueue.add(num);
+    const wrap = _pdfCanvases[num - 1];
+    if (!wrap || wrap.dataset.rendered === "1") return;
+    try {
+      const page    = await pdfDoc.getPage(num);
+      const vw      = Math.min(window.innerWidth, 900);
+      const viewport = page.getViewport({ scale: vw / page.getViewport({ scale: 1 }).width });
+      const canvas  = document.createElement("canvas");
+      canvas.width  = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+      wrap.innerHTML = "";
+      wrap.appendChild(canvas);
+      wrap.dataset.rendered = "1";
+    } catch(e) {
+      renderQueue.delete(num);
+    }
+  }
+
+  // ── Intersection Observer: renderiza quando entra na tela ─────────────────
+  let paginaAtual = paginaInicial;
+  function atualizarInfo(n) {
+    paginaAtual = n;
+    paginaInfoEl.textContent = `Página ${n} / ${totalPaginas}`;
+    // Salva progresso
+    const cache = ls.get("sb_manga_prog_cache") || {};
+    cache[cap.id] = n;
+    ls.set("sb_manga_prog_cache", cache);
+    // Sync com backend (throttled)
+    clearTimeout(atualizarInfo._t);
+    atualizarInfo._t = setTimeout(() => {
+      apiFetch("/mangas/progresso", { method:"POST", headers:headers(true), body:JSON.stringify({
+        capituloId: cap.id, conteudoId: manga.id,
+        paginaAtual: n, totalPaginas
+      })});
+    }, 3000);
+  }
+
+  if (_pdfObserver) _pdfObserver.disconnect();
+  _pdfObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const num = parseInt(entry.target.dataset.page);
+      if (isNaN(num)) return;
+      renderPagina(num);
+      // Pré-carrega as 2 próximas
+      if (num + 1 <= totalPaginas) renderPagina(num + 1);
+      if (num + 2 <= totalPaginas) renderPagina(num + 2);
+      // Atualiza info de página
+      atualizarInfo(num);
+    });
+  }, { root: pagesContainer, threshold: 0.3 });
+
+  _pdfCanvases.forEach(w => _pdfObserver.observe(w));
+
+  // ── Botões de navegação ───────────────────────────────────────────────────
+  function irParaPagina(n) {
+    const alvo = _pdfCanvases[n - 1];
+    if (alvo) alvo.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  document.getElementById("btnPagAnterior").onclick = () => irParaPagina(Math.max(1, paginaAtual - 1));
+  document.getElementById("btnPagProxima").onclick  = () => irParaPagina(Math.min(totalPaginas, paginaAtual + 1));
+
+  // ── Ir para a página onde parou ───────────────────────────────────────────
+  // Renderiza logo as primeiras 2 páginas para não ficar tela branca
+  renderPagina(1);
+  renderPagina(2);
+  if (paginaInicial > 1) {
+    await new Promise(r => setTimeout(r, 150)); // deixa o DOM montar
+    irParaPagina(paginaInicial);
+  }
+
+  // Atualiza info inicial
+  atualizarInfo(paginaInicial);
 }
 
 // ─── Detalhe ─────────────────────────────────────────────────────────────────
@@ -608,12 +857,12 @@ function renderDetalhe() {
     sessionStorage.setItem("tvxbox_fullscreen", "1");
 
     if (!primeiroEp) {
-      alert("Nenhum episódio disponível.");
+      mostrarToast("Nenhum episódio disponível.", "warn");
       return;
     }
 
     if (!primeiroEp.video) {
-      alert("Vídeo não configurado.");
+      mostrarToast("Vídeo não configurado.", "warn");
       return;
     }
 
@@ -666,7 +915,7 @@ function renderDetalhe() {
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       `;
       c.addEventListener("click", () => {
-        if (!ep.video) { alert("Sem vídeo configurado."); return; }
+        if (!ep.video) { mostrarToast("Sem vídeo configurado.", "warn"); return; }
         window.location.href = `assistir.html?serie=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(catReal)}&temporada=${num}&episodio=${encodeURIComponent(ep.id)}&autoplay=1`;
       });
       epGrid.appendChild(c);
@@ -684,10 +933,78 @@ function carregarVideoHLS(videoEl, src) {
   if (!src) return;
   if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
   const ehHLS = src.includes(".m3u8");
+  const ehAoVivo = new URLSearchParams(location.search).has("canal");
+
   if (ehHLS && typeof Hls !== "undefined" && Hls.isSupported()) {
-    hlsInstance = new Hls({ enableWorker:true, lowLatencyMode:true });
+    // ── Configurações diferentes para ao vivo vs VOD ──────────────────────
+    const hlsConfig = ehAoVivo ? {
+      // Ao vivo: recuperação rápida, baixa latência
+      enableWorker:          true,
+      lowLatencyMode:        true,
+      liveSyncDurationCount: 3,
+      liveMaxLatencyDurationCount: 10,
+      // Reconecta automático se cair
+      maxBufferLength:       30,
+      maxMaxBufferLength:    60,
+      manifestLoadingMaxRetry:   6,
+      levelLoadingMaxRetry:      6,
+      fragLoadingMaxRetry:       6,
+      manifestLoadingRetryDelay: 1000,
+      levelLoadingRetryDelay:    1000,
+      fragLoadingRetryDelay:     1000,
+      // Recuperação de erros de rede
+      xhrSetup: (xhr) => { xhr.timeout = 10000; },
+    } : {
+      // VOD (filmes/séries): buffer grande igual YouTube (~5 min à frente)
+      enableWorker:          true,
+      lowLatencyMode:        false,
+      maxBufferLength:       300,       // 5 minutos de buffer
+      maxMaxBufferLength:    600,       // até 10 min se a banda aguentar
+      maxBufferSize:         150 * 1000 * 1000, // 150 MB em RAM
+      maxBufferHole:         0.5,
+      // Carrega segmentos seguintes agressivamente
+      startFragPrefetch:     true,
+      // Recuperação automática de queda de rede
+      manifestLoadingMaxRetry:   5,
+      levelLoadingMaxRetry:      5,
+      fragLoadingMaxRetry:       5,
+      manifestLoadingRetryDelay: 1500,
+      levelLoadingRetryDelay:    1500,
+      fragLoadingRetryDelay:     1500,
+      fragLoadingMaxRetryTimeout: 30000,
+      // Não troca pra qualidade pior de cara quando a banda cai
+      abrEwmaFastLive:       3,
+      abrEwmaSlowLive:       9,
+      abrEwmaFastVoD:        4,
+      abrEwmaSlowVoD:        15,
+      abrBandWidthFactor:    0.8,
+    };
+
+    hlsInstance = new Hls(hlsConfig);
     hlsInstance.loadSource(src);
     hlsInstance.attachMedia(videoEl);
+
+    // Recuperação automática de erros fatais (queda de internet, timeout)
+    hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+      if (!data.fatal) return; // erros não-fatais o HLS.js já trata sozinho
+      console.warn("HLS erro fatal:", data.type, data.details);
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+        // Espera 2s e tenta reconectar
+        setTimeout(() => {
+          try { hlsInstance.startLoad(); } catch(e) { /* ignora */ }
+        }, 2000);
+      } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        try { hlsInstance.recoverMediaError(); } catch(e) { /* ignora */ }
+      } else {
+        // Erro irrecuperável: recarrega do zero
+        setTimeout(() => {
+          hlsInstance.destroy();
+          hlsInstance = null;
+          carregarVideoHLS(videoEl, src);
+        }, 3000);
+      }
+    });
+
   } else {
     videoEl.src = src;
     videoEl.load();
@@ -696,6 +1013,48 @@ function carregarVideoHLS(videoEl, src) {
 
 // ── NOVO: Preview na barra de progresso do vídeo ─────────────────────────────
 // Mostra um tooltip com o tempo quando o usuário passa o mouse na região dos controles
+
+// ── Indicador de buffering / reconexão ───────────────────────────────────────
+function instalarIndicadorBuffering(videoEl) {
+  let bufferEl = document.getElementById("tvxbox-buffer-indicator");
+  if (!bufferEl) {
+    bufferEl = document.createElement("div");
+    bufferEl.id = "tvxbox-buffer-indicator";
+    bufferEl.style.cssText = `
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      display:none; flex-direction:column; align-items:center; gap:10px;
+      pointer-events:none; z-index:20;
+    `;
+    bufferEl.innerHTML = `
+      <div style="width:44px;height:44px;border:3px solid rgba(255,255,255,.2);border-top-color:#e50914;border-radius:50%;animation:spin .7s linear infinite;"></div>
+      <span id="tvxbox-buffer-msg" style="color:#fff;font-size:13px;text-shadow:0 1px 4px rgba(0,0,0,.8);background:rgba(0,0,0,.5);padding:4px 10px;border-radius:20px;"></span>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    `;
+    const shell = videoEl.closest(".player-shell") || videoEl.parentElement;
+    if (shell) { shell.style.position = "relative"; shell.appendChild(bufferEl); }
+  }
+
+  const msgEl = document.getElementById("tvxbox-buffer-msg");
+  let reconectando = false;
+
+  function mostrar(msg) {
+    bufferEl.style.display = "flex";
+    if (msgEl) msgEl.textContent = msg || "";
+  }
+  function esconder() { bufferEl.style.display = "none"; reconectando = false; }
+
+  videoEl.addEventListener("waiting",  () => mostrar("Carregando..."));
+  videoEl.addEventListener("playing",  esconder);
+  videoEl.addEventListener("canplay",  esconder);
+  videoEl.addEventListener("stalled",  () => mostrar("Aguardando rede..."));
+  videoEl.addEventListener("error",    () => { mostrar("Reconectando..."); reconectando = true; });
+
+  // Detecta quando a internet volta
+  window.addEventListener("online", () => {
+    if (reconectando) mostrar("Rede restaurada, retomando...");
+  });
+}
+
 function instalarPreviewProgressbar(videoEl) {
   const anterior = document.getElementById("progressTooltip");
   if (anterior) anterior.remove();
@@ -751,6 +1110,7 @@ function renderPlayer() {
 
   // Instala preview na progressbar
   instalarPreviewProgressbar(videoPlayer);
+  instalarIndicadorBuffering(videoPlayer);
 
   if (clickZone) {
     clickZone.addEventListener("click", () => {
@@ -813,9 +1173,6 @@ function renderPlayer() {
     }
 
     const videoUrl = ep.video;
-
-    console.log("EP =", ep);
-    console.log("VIDEO URL =", videoUrl);
 
     playerInfo.innerHTML =
       `<h1>${item.titulo}</h1><p>${ep.titulo}${ep.descricao ? " — " + ep.descricao : ""}</p>`;
@@ -962,6 +1319,108 @@ function renderPlayer() {
     btnSkip.classList.remove("hidden");
     btnSkip.onclick = () => { videoPlayer.currentTime = Math.min(videoPlayer.currentTime + 60, videoPlayer.duration - 1); };
   }
+
+  // ── Atalhos de teclado ─────────────────────────────────────────────────────
+  function instalarAtalhosPlayer(videoEl) {
+    document.addEventListener("keydown", e => {
+      // Ignora se foco está em input/textarea
+      if (["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName)) return;
+      switch(e.key) {
+        case " ":
+        case "k":
+          e.preventDefault();
+          videoEl.paused ? videoEl.play().catch(()=>{}) : videoEl.pause();
+          mostrarFeedbackPlayer(videoEl.paused ? "⏸" : "▶");
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          videoEl.currentTime = Math.min(videoEl.duration || 0, videoEl.currentTime + (e.shiftKey ? 30 : 10));
+          mostrarFeedbackPlayer(e.shiftKey ? "+30s" : "+10s");
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          videoEl.currentTime = Math.max(0, videoEl.currentTime - (e.shiftKey ? 30 : 10));
+          mostrarFeedbackPlayer(e.shiftKey ? "-30s" : "-10s");
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          videoEl.volume = Math.min(1, videoEl.volume + 0.1);
+          mostrarFeedbackPlayer(`🔊 ${Math.round(videoEl.volume * 100)}%`);
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          videoEl.volume = Math.max(0, videoEl.volume - 0.1);
+          mostrarFeedbackPlayer(videoEl.volume === 0 ? "🔇" : `🔉 ${Math.round(videoEl.volume * 100)}%`);
+          break;
+        case "m":
+        case "M":
+          e.preventDefault();
+          videoEl.muted = !videoEl.muted;
+          mostrarFeedbackPlayer(videoEl.muted ? "🔇 Mudo" : "🔊");
+          break;
+        case "f":
+        case "F":
+          e.preventDefault();
+          const shell2 = videoEl.closest(".player-shell") || videoEl;
+          if (document.fullscreenElement) document.exitFullscreen?.().catch(()=>{});
+          else shell2.requestFullscreen?.().catch(()=>{});
+          break;
+        case "Escape":
+          if (document.fullscreenElement) document.exitFullscreen?.().catch(()=>{});
+          break;
+      }
+    });
+  }
+
+  // Feedback visual rápido no centro do player (±10s, pause, etc.)
+  function mostrarFeedbackPlayer(texto) {
+    let fb = document.getElementById("tvxbox-player-feedback");
+    if (!fb) {
+      fb = document.createElement("div");
+      fb.id = "tvxbox-player-feedback";
+      fb.style.cssText = `
+        position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+        background:rgba(0,0,0,.7); color:#fff; font-size:22px; font-weight:700;
+        padding:12px 20px; border-radius:12px; pointer-events:none; z-index:25;
+        opacity:0; transition:opacity .15s ease;
+      `;
+      const shell3 = videoPlayer.closest(".player-shell") || videoPlayer.parentElement;
+      if (shell3) shell3.appendChild(fb);
+    }
+    fb.textContent = texto;
+    fb.style.opacity = "1";
+    clearTimeout(fb._t);
+    fb._t = setTimeout(() => { fb.style.opacity = "0"; }, 700);
+  }
+
+  // ── Double-tap mobile: -10s (esquerda) / +10s (direita) ───────────────────
+  function instalarDoubleTapPlayer(videoEl) {
+    let lastTap = 0;
+    let lastX   = 0;
+    videoEl.addEventListener("touchend", e => {
+      const agora = Date.now();
+      const x     = e.changedTouches[0].clientX;
+      if (agora - lastTap < 300 && Math.abs(x - lastX) < 60) {
+        // double-tap detectado
+        const rect   = videoEl.getBoundingClientRect();
+        const ladoDireito = x > rect.left + rect.width / 2;
+        if (ladoDireito) {
+          videoEl.currentTime = Math.min(videoEl.duration || 0, videoEl.currentTime + 10);
+          mostrarFeedbackPlayer("+10s");
+        } else {
+          videoEl.currentTime = Math.max(0, videoEl.currentTime - 10);
+          mostrarFeedbackPlayer("-10s");
+        }
+        lastTap = 0; // reseta para não contar triplo-tap
+      } else {
+        lastTap = agora;
+        lastX   = x;
+      }
+    });
+  }
+
+  instalarAtalhosPlayer(videoPlayer);
+  instalarDoubleTapPlayer(videoPlayer);
 
   // Garante que os botões flutuantes aparecem dentro do fullscreen element
   function moverBotoesFullscreen() {
@@ -1132,7 +1591,7 @@ function renderCanaisAoVivo(containerId, lista) {
   lista.forEach(item => {
     const wrap = document.createElement("div");
     wrap.style.cssText = "position:relative;display:inline-block;";
-    const card = criarCard(item, () => item.video ? (window.location.href=`assistir.html?canal=${encodeURIComponent(item.id)}`) : alert("Vídeo não configurado."));
+    const card = criarCard(item, () => item.video ? (window.location.href=`assistir.html?canal=${encodeURIComponent(item.id)}`) : mostrarToast("Vídeo não configurado.", "warn"));
     const btnFav = document.createElement("button");
     btnFav.className = "canal-fav-btn";
     btnFav.title = "Adicionar à minha lista";
@@ -1174,14 +1633,42 @@ function iniciarBusca() {
     input.addEventListener("click",  () => { window.location.href = "busca.html"; });
     return;
   }
-  // Na tela de busca usa normalmente
+
+  // Na tela de busca: debounce de 150ms + busca em título, gênero e descrição
+  let debounceTimer = null;
   input.addEventListener("input", () => {
-    const t = input.value.toLowerCase().trim();
-    document.querySelectorAll(".poster-card, .busca-card").forEach(c => {
-      c.closest(".busca-item")
-        ? c.closest(".busca-item").classList.toggle("hidden", !!(t && !c.dataset.titulo?.includes(t)))
-        : c.classList.toggle("hidden", !!(t && !c.dataset.titulo?.includes(t)));
-    });
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const t = input.value.toLowerCase().trim();
+      document.querySelectorAll(".poster-card, .busca-card").forEach(c => {
+        const titulo  = (c.dataset.titulo  || "").toLowerCase();
+        const genero  = (c.dataset.genero  || "").toLowerCase();
+        const descr   = (c.dataset.descricao || "").toLowerCase();
+        const match   = !t || titulo.includes(t) || genero.includes(t) || descr.includes(t);
+        const wrapper = c.closest(".busca-item") || c;
+        wrapper.classList.toggle("hidden", !match);
+      });
+
+      // Mostra contagem de resultados
+      let contEl = document.getElementById("buscaContagem");
+      if (!contEl) {
+        contEl = document.createElement("p");
+        contEl.id = "buscaContagem";
+        contEl.style.cssText = "color:#888;font-size:13px;margin:8px 0 0 4px;";
+        input.parentElement?.appendChild(contEl);
+      }
+      if (t) {
+        const visiveis = document.querySelectorAll(".poster-card:not(.hidden), .busca-card:not(.hidden)").length;
+        contEl.textContent = visiveis === 0 ? "Nenhum resultado" : `${visiveis} resultado${visiveis !== 1 ? "s" : ""}`;
+      } else {
+        contEl.textContent = "";
+      }
+    }, 150);
+  });
+
+  // Limpa busca com Escape
+  input.addEventListener("keydown", e => {
+    if (e.key === "Escape") { input.value = ""; input.dispatchEvent(new Event("input")); }
   });
 }
 
@@ -1196,7 +1683,110 @@ function iniciarFiltros() {
   }));
 }
 
-// ─── Proteção de conteúdo — bloquear clique direito em imagens ────────────────
+// ─── Toast de notificação ─────────────────────────────────────────────────────
+function mostrarToast(msg, tipo = "info", duracao = 2500) {
+  let container = document.getElementById("tvxbox-toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "tvxbox-toast-container";
+    container.style.cssText = `
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+      display:flex; flex-direction:column; align-items:center; gap:8px;
+      z-index:99999; pointer-events:none;
+    `;
+    document.body.appendChild(container);
+  }
+  const cores = { info:"#222", success:"#1a5c2a", error:"#7a0a0a", warn:"#5c4a00" };
+  const icons = { info:"ℹ️", success:"✓", error:"✕", warn:"⚠️" };
+  const toast = document.createElement("div");
+  toast.style.cssText = `
+    background:${cores[tipo]||cores.info}; color:#fff; padding:10px 18px;
+    border-radius:10px; font-size:14px; font-weight:500;
+    box-shadow:0 4px 16px rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.08);
+    opacity:0; transform:translateY(12px); transition:opacity .2s,transform .2s;
+    max-width:320px; text-align:center;
+  `;
+  toast.textContent = `${icons[tipo]||""} ${msg}`;
+  container.appendChild(toast);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { toast.style.opacity = "1"; toast.style.transform = "translateY(0)"; });
+  });
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(12px)";
+    setTimeout(() => toast.remove(), 220);
+  }, duracao);
+}
+
+// ─── Esconder URL real — mostra sempre "tvxbox.com.br" ───────────────────────
+(function esconderURL() {
+  // Mapeia cada página para um título amigável
+  const titulos = {
+    "index.html":    "TVXBOX",
+    "detalhe.html":  "TVXBOX",
+    "assistir.html": "TVXBOX · Assistindo",
+    "ao-vivo.html":  "TVXBOX · Ao Vivo",
+    "mangas.html":   "TVXBOX · Mangás",
+    "busca.html":    "TVXBOX · Busca",
+    "jogos.html":    "TVXBOX · Jogos",
+    "aulas.html":    "TVXBOX · Aulas",
+    "login.html":    "TVXBOX · Entrar",
+    "cadastro.html": "TVXBOX · Cadastro",
+  };
+
+  function paginaAtual() {
+    return window.location.pathname.split("/").pop() || "index.html";
+  }
+
+  // Troca o título da aba para algo amigável
+  function aplicarTitulo() {
+    const pagina = paginaAtual();
+    document.title = titulos[pagina] || "TVXBOX";
+  }
+
+  // Esconde o nome do arquivo da URL logo ao carregar
+  // ex: tvxbox.com.br/detalhe.html → tvxbox.com.br/
+  function limparURL() {
+    const pagina = paginaAtual();
+    // Mantém login e cadastro visíveis (segurança: usuário pode querer salvar o link)
+    if (pagina === "login.html" || pagina === "cadastro.html") return;
+    // Substitui no histórico sem recarregar a página
+    const url = window.location.origin + "/";
+    history.replaceState(null, document.title, url);
+  }
+
+  aplicarTitulo();
+  limparURL();
+})();
+
+// ─── Transição suave entre páginas ───────────────────────────────────────────
+(function instalarTransicaoPaginas() {
+  // Fade in ao entrar na página
+  document.documentElement.style.opacity = "0";
+  document.documentElement.style.transition = "opacity 0.18s ease";
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { document.documentElement.style.opacity = "1"; });
+  });
+
+  // Fade out ao sair
+  document.addEventListener("click", e => {
+    const a = e.target.closest("a[href]");
+    if (!a) return;
+    const href = a.getAttribute("href");
+    // Só faz transição em links internos, sem hash, sem target=_blank
+    if (!href || href.startsWith("http") || href.startsWith("#") || a.target === "_blank") return;
+    if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault();
+    document.documentElement.style.opacity = "0";
+    setTimeout(() => { window.location.href = href; }, 160);
+  });
+
+  // Mesma coisa pra window.location.href programático: expõe helper
+  window._navegarPara = (href) => {
+    document.documentElement.style.opacity = "0";
+    setTimeout(() => { window.location.href = href; }, 160);
+  };
+})();
 document.addEventListener("contextmenu", e => {
   if (e.target.tagName === "IMG" || e.target.tagName === "VIDEO") e.preventDefault();
 });
@@ -1240,18 +1830,18 @@ function configurarUsuario() {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
+  // carregarCatalogo já renderiza do cache imediatamente (sem esperar API)
   await carregarCatalogo();
   const temPerfil = !!getPerfilId();
   const naHome    = !!(document.getElementById("rowDestaques"));
   if (!temPerfil && naHome) await mostrarTelaPerfis();
   await carregarUserData();
   configurarUsuario();
-  renderHome();
-  renderDetalhe();
+  // renderHome/AoVivo etc já foram chamados por carregarCatalogo;
+  // chama novamente só o que carregarCatalogo NÃO cobre:
+  renderContinuarAssistindo();
+  renderFavoritos();
   renderPlayer();
-  renderAoVivoPage();
-  renderAulasPage();
-  renderMangasPage();
   iniciarMenuMobile();
   iniciarBusca();
 })();
