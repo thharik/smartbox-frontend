@@ -1762,21 +1762,33 @@ function mostrarToast(msg, tipo = "info", duracao = 2500) {
     return window.location.pathname.split("/").pop() || "index.html";
   }
 
-  // Troca o título da aba para algo amigável
   function aplicarTitulo() {
     const pagina = paginaAtual();
     document.title = titulos[pagina] || "TVXBOX";
   }
 
-  // Esconde o nome do arquivo da URL logo ao carregar
-  // ex: tvxbox.com.br/detalhe.html → tvxbox.com.br/
   function limparURL() {
     const pagina = paginaAtual();
-    // Mantém login e cadastro visíveis (segurança: usuário pode querer salvar o link)
+
     if (pagina === "login.html" || pagina === "cadastro.html") return;
-    // Substitui no histórico sem recarregar a página
-    const url = window.location.origin + "/";
-    history.replaceState(null, document.title, url);
+
+    const params = window.location.search;
+
+    let rota = "/";
+
+    if (pagina === "detalhe.html") rota = "/detalhe";
+    else if (pagina === "assistir.html") rota = "/assistir";
+    else if (pagina === "ao-vivo.html") rota = "/ao-vivo";
+    else if (pagina === "mangas.html") rota = "/mangas";
+    else if (pagina === "busca.html") rota = "/busca";
+    else if (pagina === "jogos.html") rota = "/jogos";
+    else if (pagina === "aulas.html") rota = "/aulas";
+
+    history.replaceState(
+      null,
+      document.title,
+      window.location.origin + rota + params
+    );
   }
 
   aplicarTitulo();
