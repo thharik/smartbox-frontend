@@ -19,12 +19,36 @@ function headers(comPerfil = false) {
 async function apiFetch(path, opts = {}) {
   try {
     const r = await fetch(API + path, opts);
-    if (r.status === 401) { logout(); return null; }
-    if (r.status === 402) { window.location.href = "login.html?sem_assinatura=1"; return null; }
-    if (r.status === 403) return null; // sem perfil selecionado ou sem permissão
-    if (!r.ok) return null;            // qualquer outro erro HTTP
+
+    console.log("[API]", path, "STATUS:", r.status);
+
+    if (r.status === 401) {
+      console.warn("401 - Token inválido");
+      logout();
+      return null;
+    }
+
+    if (r.status === 402) {
+      console.warn("402 - Sem assinatura");
+      window.location.href = "login.html?sem_assinatura=1";
+      return null;
+    }
+
+    if (r.status === 403) {
+      console.warn("403 - Sem permissão:", path);
+      return null;
+    }
+
+    if (!r.ok) {
+      const erro = await r.text();
+      console.error("Erro HTTP:", r.status, path, erro);
+      return null;
+    }
+
     return await r.json();
-  } catch {
+
+  } catch (err) {
+    console.error("Erro fetch:", path, err);
     return null;
   }
 }
