@@ -193,6 +193,9 @@
         <button class="busca-cat-btn" data-filter="Anime">Animes</button>
         <button class="busca-cat-btn" data-filter="AoVivo">Ao vivo</button>
       </div>
+
+      <p class="busca-titulo-sec" id="generosTitulo" style="display:none">Explorar por gênero</p>
+      <div class="busca-categorias" id="buscaGeneros"></div>
     </div>
 
     <!-- Resultados -->
@@ -214,17 +217,20 @@
     const resultados  = document.getElementById("buscaResultados");
     const vazio       = document.getElementById("buscaVazio");
     const catBtns     = document.querySelectorAll(".busca-cat-btn");
+    const generosTitulo = document.getElementById("generosTitulo");
+    const generosBox    = document.getElementById("buscaGeneros");
 
     btnVoltar.addEventListener("click", () => history.back());
 
-    let filtroAtivo = "todos";
+    let filtroAtivo  = "todos";
+    let generoAtivo  = null; // ex: "Comédia"
 
     catBtns.forEach(btn => {
       btn.addEventListener("click", () => {
         catBtns.forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         filtroAtivo = btn.dataset.filter;
-        renderTodos(filtroAtivo);
+        renderTodos();
       });
     });
 
@@ -232,14 +238,14 @@
       input.value = "";
       btnLimpar.style.display = "none";
       catBox.style.display    = "";
-      renderTodos(filtroAtivo);
+      renderTodos();
       input.focus();
     });
 
     input.addEventListener("input", () => {
       const q = input.value.trim();
       btnLimpar.style.display = q ? "block" : "none";
-      if (!q) { catBox.style.display = ""; renderTodos(filtroAtivo); return; }
+      if (!q) { catBox.style.display = ""; renderTodos(); return; }
       catBox.style.display = "none";
       buscar(q);
     });
@@ -253,6 +259,32 @@
         ...(catalogoData.aoVivo    || []),
         ...(catalogoData.aulas     || []),
       ];
+    }
+
+    function coletarGeneros() {
+      const set = new Set();
+      getTodos().forEach(item => (item.generos || []).forEach(g => set.add(g)));
+      return [...set].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    }
+
+    function montarGeneros() {
+      const generos = coletarGeneros();
+      if (!generos.length) return;
+      generosBox.innerHTML = "";
+      generos.forEach(g => {
+        const btn = document.createElement("button");
+        btn.className = "busca-cat-btn";
+        btn.textContent = g;
+        btn.dataset.genero = g;
+        if (generoAtivo === g) btn.classList.add("active");
+        btn.addEventListener("click", () => {
+          generoAtivo = generoAtivo === g ? null : g;
+          document.querySelectorAll("[data-genero]").forEach(b => b.classList.toggle("active", b.dataset.genero === generoAtivo));
+          renderTodos();
+        });
+        generosBox.appendChild(btn);
+      });
+      generosTitulo.style.display = "";
     }
 
     function renderItem(item) {
@@ -285,10 +317,18 @@
       return div;
     }
 
-    function renderTodos(filtro = "todos") {
+    function aplicarFiltros(lista) {
+      return lista.filter(i => {
+        const okTipo   = filtroAtivo === "todos" || i.tipo === filtroAtivo;
+        const okGenero = !generoAtivo || (i.generos || []).includes(generoAtivo);
+        return okTipo && okGenero;
+      });
+    }
+
+    function renderTodos() {
       resultados.innerHTML = "";
       vazio.classList.add("hidden");
-      const lista = getTodos().filter(i => filtro === "todos" || i.tipo === filtro);
+      const lista = aplicarFiltros(getTodos());
       if (!lista.length) { vazio.classList.remove("hidden"); return; }
       lista.forEach(item => resultados.appendChild(renderItem(item)));
     }
@@ -297,7 +337,7 @@
       resultados.innerHTML = "";
       vazio.classList.add("hidden");
       const lower = q.toLowerCase();
-      const lista = getTodos().filter(i =>
+      const lista = aplicarFiltros(getTodos()).filter(i =>
         (i.titulo || "").toLowerCase().includes(lower) ||
         (i.descricao || "").toLowerCase().includes(lower)
       );
@@ -312,7 +352,17 @@
       setTimeout(() => aguardarCatalogo(cb, tentativas - 1), 150);
     }
 
-    aguardarCatalogo(() => renderTodos("todos"));
+    aguardarCatalogo(() => {
+      // Suporte a link vindo da home: busca.html?genero=Comédia
+      const params = new URLSearchParams(window.location.search);
+      const generoUrl = params.get("genero");
+      montarGeneros();
+      if (generoUrl) {
+        generoAtivo = generoUrl;
+        document.querySelectorAll("[data-genero]").forEach(b => b.classList.toggle("active", b.dataset.genero === generoAtivo));
+      }
+      renderTodos();
+    });
   })();
   </script>
 </body>

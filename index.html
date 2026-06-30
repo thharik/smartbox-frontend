@@ -8,6 +8,25 @@
   <link rel="manifest" href="pwa/manifest.json">
   <meta name="theme-color" content="#141414">
   <link rel="apple-touch-icon" href="pwa/icon-192.png">
+  <style>
+    .generos-box { margin-bottom: 28px; }
+    .generos-row {
+      display: flex; flex-wrap: wrap; gap: 10px;
+    }
+    .genero-pill {
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1.5px solid #333;
+      background: #1e1e1e;
+      color: #ddd;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .genero-pill:hover { background: #e50914; border-color: #e50914; color: #fff; }
+  </style>
 </head>
 <body>
   <header class="topbar">
@@ -44,6 +63,11 @@
       </div>
     </section>
 
+    <section id="generosBox" class="generos-box hidden">
+      <div class="section-header"><h2>Explorar por gênero</h2></div>
+      <div id="generosRow" class="generos-row"></div>
+    </section>
+
     <section id="continuarBox" class="continuar-box hidden">
       <div class="section-header"><h2>Continuar assistindo</h2></div>
       <div id="continuarCard"></div>
@@ -74,5 +98,44 @@
 
   <script src="script.js"></script>
   <script src="pwa/register-sw.js"></script>
+  <script>
+  (function() {
+    function coletarGeneros() {
+      if (typeof catalogoData === "undefined" || !catalogoData) return [];
+      const todos = [
+        ...(catalogoData.destaques || []),
+        ...(catalogoData.animes    || []),
+        ...(catalogoData.series    || []),
+      ];
+      const set = new Set();
+      todos.forEach(item => (item.generos || []).forEach(g => set.add(g)));
+      return [...set].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    }
+
+    function montarGeneros() {
+      const generos = coletarGeneros();
+      if (!generos.length) return;
+      const box = document.getElementById("generosBox");
+      const row = document.getElementById("generosRow");
+      row.innerHTML = "";
+      generos.forEach(g => {
+        const a = document.createElement("a");
+        a.className = "genero-pill";
+        a.textContent = g;
+        a.href = `busca.html?genero=${encodeURIComponent(g)}`;
+        row.appendChild(a);
+      });
+      box.classList.remove("hidden");
+    }
+
+    function aguardarCatalogo(cb, tentativas = 20) {
+      if (typeof catalogoData !== "undefined" && catalogoData) { cb(); return; }
+      if (tentativas <= 0) return;
+      setTimeout(() => aguardarCatalogo(cb, tentativas - 1), 150);
+    }
+
+    aguardarCatalogo(montarGeneros);
+  })();
+  </script>
 </body>
 </html>
