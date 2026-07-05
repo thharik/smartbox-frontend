@@ -284,7 +284,7 @@
 
     if (!token) return;
     try {
-      const r = await fetch("https://tvxbox-backend.onrender.com/assinatura/status", {
+      const r = await fetch("https://smartbox-backend.onrender.com/assinatura/status", {
         headers: { "Authorization": "Bearer " + token }
       });
       if (!r.ok) return;
