@@ -10,9 +10,7 @@
   <link rel="apple-touch-icon" href="pwa/icon-192.png">
   <style>
     .generos-box { margin-bottom: 28px; }
-    .generos-row {
-      display: flex; flex-wrap: wrap; gap: 10px;
-    }
+    .generos-row { display: flex; flex-wrap: wrap; gap: 10px; }
     .genero-pill {
       padding: 8px 18px;
       border-radius: 999px;
@@ -26,6 +24,20 @@
       display: inline-block;
     }
     .genero-pill:hover { background: #e50914; border-color: #e50914; color: #fff; }
+    .genero-pill.hidden { display: none !important; }
+    .genero-mais {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1.5px solid #444;
+      background: #1e1e1e;
+      color: #888;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+      line-height: 1;
+      letter-spacing: 1px;
+    }
+    .genero-mais:hover { background: #2a2a2a; border-color: #666; color: #fff; }
   </style>
 </head>
 <body>
@@ -112,19 +124,40 @@
       return [...set].sort((a, b) => a.localeCompare(b, "pt-BR"));
     }
 
+    const LIMITE = 6;
+
     function montarGeneros() {
       const generos = coletarGeneros();
       if (!generos.length) return;
       const box = document.getElementById("generosBox");
       const row = document.getElementById("generosRow");
       row.innerHTML = "";
-      generos.forEach(g => {
+      let expandido = false;
+
+      generos.forEach((g, i) => {
         const a = document.createElement("a");
         a.className = "genero-pill";
         a.textContent = g;
         a.href = `busca.html?genero=${encodeURIComponent(g)}`;
+        if (i >= LIMITE) a.classList.add("hidden");
         row.appendChild(a);
       });
+
+      if (generos.length > LIMITE) {
+        const btn = document.createElement("button");
+        btn.className = "genero-mais";
+        btn.textContent = "···";
+        btn.title = "Ver todos os gêneros";
+        btn.addEventListener("click", () => {
+          expandido = !expandido;
+          row.querySelectorAll(".genero-pill.hidden, .genero-pill").forEach((el, i) => {
+            if (i >= LIMITE) el.classList.toggle("hidden", !expandido);
+          });
+          btn.textContent = expandido ? "−" : "···";
+        });
+        row.appendChild(btn);
+      }
+
       box.classList.remove("hidden");
     }
 

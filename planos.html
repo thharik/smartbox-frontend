@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Assine o TVXBOX</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="pwa/manifest.json">
+  <meta name="theme-color" content="#141414">
+  <style>
+    body { background: #0a0a0a; }
+
+    /* ── Hero ── */
+    .planos-hero {
+      text-align: center;
+      padding: 64px 24px 40px;
+      background: linear-gradient(to bottom, #1a0000 0%, #0a0a0a 100%);
+      border-bottom: 1px solid #1f1f1f;
+    }
+    .planos-hero .logo { font-size: 36px; font-weight: 900; color: #e50914; letter-spacing: 2px; display: block; margin-bottom: 20px; }
+    .planos-hero h1 { font-size: 32px; font-weight: 800; margin-bottom: 12px; line-height: 1.2; }
+    .planos-hero p  { font-size: 16px; color: #aaa; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+
+    /* ── Cartões de plano ── */
+    .planos-grid {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 48px 24px;
+      flex-wrap: wrap;
+    }
+    .plano-card {
+      background: #161616;
+      border: 1.5px solid #2a2a2a;
+      border-radius: 18px;
+      padding: 32px 28px 28px;
+      width: 300px;
+      position: relative;
+      transition: border-color .2s, transform .2s;
+    }
+    .plano-card:hover { border-color: #555; transform: translateY(-3px); }
+    .plano-card.destaque {
+      border-color: #e50914;
+      background: #1a0000;
+    }
+    .plano-card.destaque:hover { border-color: #ff2020; }
+
+    .plano-badge {
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #e50914;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 999px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .plano-nome {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .plano-preco {
+      font-size: 38px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+    .plano-preco span { font-size: 16px; font-weight: 400; color: #888; }
+    .plano-desc {
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .plano-itens {
+      list-style: none;
+      margin-bottom: 28px;
+    }
+    .plano-itens li {
+      font-size: 14px;
+      color: #ccc;
+      padding: 8px 0;
+      border-bottom: 1px solid #222;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .plano-itens li:last-child { border-bottom: none; }
+    .plano-itens .check { color: #e50914; font-size: 16px; flex-shrink: 0; }
+    .plano-itens .x     { color: #444;    font-size: 16px; flex-shrink: 0; }
+
+    .btn-assinar {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s, opacity .15s;
+    }
+    .btn-assinar.primario {
+      background: #e50914;
+      color: #fff;
+    }
+    .btn-assinar.primario:hover { background: #c40812; }
+    .btn-assinar.secundario {
+      background: #2a2a2a;
+      color: #ddd;
+      border: 1px solid #444;
+    }
+    .btn-assinar.secundario:hover { background: #333; }
+    .btn-assinar:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Status de assinatura ativa ── */
+    .status-ativa {
+      background: #0d2e0d;
+      border: 1.5px solid #1e6b1e;
+      border-radius: 14px;
+      padding: 20px 28px;
+      max-width: 480px;
+      margin: 0 auto 32px;
+      text-align: center;
+      display: none;
+    }
+    .status-ativa .icone { font-size: 32px; margin-bottom: 8px; }
+    .status-ativa h3 { font-size: 18px; font-weight: 700; color: #4caf50; margin-bottom: 6px; }
+    .status-ativa p  { font-size: 14px; color: #aaa; }
+
+    /* ── Garantias ── */
+    .garantias {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      padding: 0 24px 48px;
+      flex-wrap: wrap;
+    }
+    .garantia-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #888;
+      font-size: 14px;
+    }
+    .garantia-item span { font-size: 22px; }
+
+    /* ── FAQ ── */
+    .faq { max-width: 680px; margin: 0 auto; padding: 0 24px 64px; }
+    .faq h2 { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+    .faq-item {
+      border-bottom: 1px solid #1f1f1f;
+      padding: 16px 0;
+    }
+    .faq-item summary {
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after { content: "+"; font-size: 20px; color: #e50914; }
+    .faq-item[open] summary::after { content: "−"; }
+    .faq-item p { font-size: 14px; color: #999; margin-top: 12px; line-height: 1.7; }
+
+    /* mensagem de feedback */
+    #plansMensagem {
+      text-align: center;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 0 auto 20px;
+      max-width: 480px;
+      display: none;
+      font-size: 14px;
+    }
+    #plansMensagem.erro    { background: #2a0000; color: #ff6b6b; border: 1px solid #5a0000; }
+    #plansMensagem.sucesso { background: #0d2e0d; color: #4caf50; border: 1px solid #1e6b1e; }
+
+    @media (max-width: 640px) {
+      .planos-hero h1 { font-size: 24px; }
+      .plano-card { width: 100%; max-width: 340px; }
+      .garantias { gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="planos-hero">
+    <a href="index.html" class="logo">TVXBOX</a>
+    <h1>Assine e acesse tudo</h1>
+    <p>Filmes, séries, animes e mangás ilimitados. Cancele quando quiser.</p>
+  </div>
+
+  <div style="padding: 32px 24px 0; max-width: 900px; margin: 0 auto;">
+    <!-- Status: já tem assinatura ativa -->
+    <div class="status-ativa" id="statusAtiva">
+      <div class="icone">✅</div>
+      <h3>Sua assinatura está ativa!</h3>
+      <p id="statusValidaAte">Válida até —</p>
+      <br>
+      <a href="index.html" style="color:#e50914; font-weight:700;">Voltar para o início →</a>
+    </div>
+
+    <div id="plansMensagem"></div>
+  </div>
+
+  <!-- Planos -->
+  <div class="planos-grid" id="planosGrid">
+
+    <!-- Único plano mensal -->
+    <div class="plano-card destaque" style="width:340px">
+      <div class="plano-badge">Plano único</div>
+      <p class="plano-nome">Assinatura Mensal</p>
+      <p class="plano-preco">R$9<span>,99/mês</span></p>
+      <p class="plano-desc">Acesso completo a todo o conteúdo. Cancele quando quiser.</p>
+      <ul class="plano-itens">
+        <li><span class="check">✓</span> Filmes e séries em HD</li>
+        <li><span class="check">✓</span> Animes completos e atualizados</li>
+        <li><span class="check">✓</span> Mangás ilimitados</li>
+        <li><span class="check">✓</span> Canais ao vivo 24h</li>
+        <li><span class="check">✓</span> Acesso no celular e no PC</li>
+        <li><span class="check">✓</span> Pagamento seguro via Stripe</li>
+      </ul>
+      <button class="btn-assinar primario" onclick="iniciarCheckout()">▶ Assinar agora — R$9,99/mês</button>
+      <p style="font-size:11px;color:#666;text-align:center;margin-top:10px;">Renovação automática mensal · Cancele a qualquer momento</p>
+    </div>
+
+  </div>
+
+  <!-- Garantias -->
+  <div class="garantias">
+    <div class="garantia-item"><span>🔒</span> Pagamento seguro via Stripe</div>
+    <div class="garantia-item"><span>🔄</span> Cancele quando quiser</div>
+    <div class="garantia-item"><span>📱</span> Funciona no celular e PC</div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq">
+    <h2>Perguntas frequentes</h2>
+    <details class="faq-item">
+      <summary>Posso cancelar a qualquer momento?</summary>
+      <p>Sim. Basta cancelar pelo Stripe antes da próxima cobrança. Você continua com acesso até o fim do período pago.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Quais formas de pagamento são aceitas?</summary>
+      <p>Cartão de crédito e débito (Visa, Mastercard, Elo, Amex) via Stripe, a plataforma de pagamentos mais segura do mundo.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Meu acesso é imediato após o pagamento?</summary>
+      <p>Sim. O acesso é liberado instantaneamente assim que o pagamento é confirmado.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Em quantos dispositivos posso assistir?</summary>
+      <p>No plano Mensal: 1 dispositivo por vez. Nos planos Semestral e Anual: 2 dispositivos simultâneos.</p>
+    </details>
+  </div>
+
+  <script>
+  const STRIPE_LINK = "https://buy.stripe.com/dRm7sEdOs0Jt4yd8F0gUM02";
+
+  // Verifica se já tem assinatura ativa ao carregar
+  (async function verificarStatus() {
+    const token = (() => { try { return JSON.parse(localStorage.getItem("sb_token")); } catch { return null; } })();
+
+    // Feedback de retorno do checkout
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("assinatura") === "ok") {
+      mostrarMsg("✅ Assinatura ativada com sucesso! Bem-vindo ao TVXBOX.", "sucesso");
+    } else if (params.get("assinatura") === "cancelada") {
+      mostrarMsg("O pagamento foi cancelado. Você pode tentar novamente quando quiser.", "erro");
+    }
+
+    if (!token) return;
+    try {
+      const r = await fetch("https://tvxbox-backend-1.onrender.com/assinatura/status", {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      if (!r.ok) return;
+      const data = await r.json();
+      if (data.ativa) {
+        document.getElementById("statusAtiva").style.display = "block";
+        document.getElementById("planosGrid").style.opacity  = "0.4";
+        document.getElementById("planosGrid").style.pointerEvents = "none";
+        const ate = data.valida_ate ? new Date(data.valida_ate).toLocaleDateString("pt-BR") : "—";
+        document.getElementById("statusValidaAte").textContent = "Válida até " + ate;
+      }
+    } catch {}
+  })();
+
+  function mostrarMsg(texto, tipo) {
+    const el = document.getElementById("plansMensagem");
+    el.textContent = texto;
+    el.className = tipo;
+    el.style.display = "block";
+  }
+
+  function iniciarCheckout() {
+    const token = (() => { try { return JSON.parse(localStorage.getItem("sb_token")); } catch { return null; } })();
+    if (!token) {
+      window.location.href = "login.html?redirect=planos.html";
+      return;
+    }
+    window.open(STRIPE_LINK, "_blank");
+  }
+  </script>
+</body>
+</html>

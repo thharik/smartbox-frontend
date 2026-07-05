@@ -9,56 +9,33 @@
   <meta name="theme-color" content="#141414">
   <link rel="apple-touch-icon" href="pwa/icon-192.png">
   <style>
-    /* ── Preview slideshow de fundo ── */
+    /* ── Slideshow de fundo ── */
     .auth-bg-slideshow {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      overflow: hidden;
+      position: fixed; inset: 0; z-index: 0; overflow: hidden;
     }
     .auth-bg-slideshow .slide {
-      position: absolute;
-      inset: 0;
-      background-size: cover;
-      background-position: center;
-      opacity: 0;
-      transition: opacity 1.2s ease;
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+      opacity: 0; transition: opacity 1.2s ease;
     }
-    .auth-bg-slideshow .slide.ativo {
-      opacity: 1;
-    }
-    /* Cards flutuantes que aparecem sobre o fundo */
+    .auth-bg-slideshow .slide.ativo { opacity: 1; }
+
+    /* Cards flutuantes */
     .preview-cards {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      overflow: hidden;
+      position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
     }
     .preview-float-card {
-      position: absolute;
-      width: 130px;
-      border-radius: 10px;
-      overflow: hidden;
+      position: absolute; width: 130px; border-radius: 10px; overflow: hidden;
       box-shadow: 0 8px 28px rgba(0,0,0,.7);
-      opacity: 0;
-      transform: translateY(20px) scale(0.92);
+      opacity: 0; transform: translateY(20px) scale(0.92);
       animation: floatIn 0.7s ease forwards;
     }
-    .preview-float-card img {
-      width: 100%;
-      display: block;
-      aspect-ratio: 2/3;
-      object-fit: cover;
-    }
-    @keyframes floatIn {
-      to { opacity: 0.85; transform: translateY(0) scale(1); }
-    }
-    /* Gradiente que escurece a esquerda (onde ficam os cards) */
+    .preview-float-card img { width: 100%; display: block; aspect-ratio: 2/3; object-fit: cover; }
+    @keyframes floatIn { to { opacity: 0.85; transform: translateY(0) scale(1); } }
+
+    /* Gradiente lateral */
     .preview-left-fade {
-      position: fixed;
-      inset: 0;
-      z-index: 2;
+      position: fixed; inset: 0; z-index: 2;
       background: linear-gradient(
         to right,
         rgba(10,10,10,0.15) 0%,
@@ -67,70 +44,190 @@
         rgba(10,10,10,1)    100%
       );
     }
-    /* Garante que o conteúdo do auth fica acima de tudo */
+
     .auth-page { background: transparent; }
     .auth-overlay { display: none; }
     .auth-container { position: relative; z-index: 10; }
+
+    /* ── Painel de assinatura (lado esquerdo) ── */
+    .plano-panel {
+      background: rgba(10,10,10,0.82);
+      border: 1.5px solid #2a2a2a;
+      border-radius: 20px;
+      padding: 32px 28px;
+      backdrop-filter: blur(10px);
+      max-width: 420px;
+    }
+
+    .plano-panel .logo-txt {
+      font-size: 30px;
+      font-weight: 900;
+      color: #e50914;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .plano-panel .tagline {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .plano-preco-destaque {
+      background: linear-gradient(135deg, #1a0000, #2a0606);
+      border: 1.5px solid #e50914;
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .plano-preco-destaque .valor {
+      font-size: 36px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+    }
+    .plano-preco-destaque .valor span {
+      font-size: 14px;
+      font-weight: 400;
+      color: #aaa;
+    }
+    .plano-preco-destaque .badge-mensal {
+      background: #e50914;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      white-space: nowrap;
+    }
+
+    .plano-itens {
+      list-style: none;
+      margin-bottom: 22px;
+    }
+    .plano-itens li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #ccc;
+      padding: 9px 0;
+      border-bottom: 1px solid #1f1f1f;
+    }
+    .plano-itens li:last-child { border-bottom: none; }
+    .plano-itens .ic { font-size: 16px; flex-shrink: 0; }
+
+    .btn-stripe {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      background: #e50914;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: background .15s, transform .1s;
+      margin-bottom: 12px;
+    }
+    .btn-stripe:hover { background: #c40812; transform: translateY(-1px); }
+
+    .plano-nota {
+      font-size: 11px;
+      color: #666;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .plano-nota a { color: #888; text-decoration: underline; }
+
+    /* ── Banner sem assinatura ── */
+    .banner-sem-assinatura {
+      background: #1a0000;
+      border: 1.5px solid #e50914;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #ffaaaa;
+      line-height: 1.5;
+      display: none;
+    }
+    .banner-sem-assinatura a { color: #e50914; font-weight: 700; }
+
+    @media (max-width: 768px) {
+      .plano-panel { max-width: 100%; }
+      .plano-preco-destaque .valor { font-size: 28px; }
+    }
   </style>
 </head>
 <body>
 
-  <!-- Slideshow de fundo com posters -->
+  <!-- Fundo animado -->
   <div class="auth-bg-slideshow" id="bgSlideshow"></div>
-
-  <!-- Cards flutuantes de posters -->
   <div class="preview-cards" id="previewCards"></div>
-
-  <!-- Gradiente de fade -->
   <div class="preview-left-fade"></div>
 
   <div class="auth-page">
     <div class="auth-overlay"></div>
-
     <div class="auth-container">
 
-      <!-- Lado esquerdo: marca + Pix -->
+      <!-- ESQUERDO: painel de assinatura -->
       <div class="auth-left">
-        <div class="brand-box">
-          <h1>TVXBOX</h1>
-          <p class="brand-subtitle">Filmes, séries, animes e mangás em uma experiência simples e bonita.</p>
-        </div>
+        <div class="plano-panel">
+          <p class="logo-txt">TVXBOX</p>
+          <p class="tagline">Filmes, séries, animes e mangás — tudo em um só lugar.</p>
 
-        <div class="support-card">
-          <h2>Ajude a melhorar o app</h2>
-          <p class="support-text">
-            O valor arrecadado será usado para melhorar o app, adicionar novidades,
-            corrigir problemas e deixar a experiência cada vez melhor para todos.
-          </p>
-
-          <div class="pix-box">
-            <div class="pix-qr">
-              <img src="assets/posteris/WhatsApp Image 2026-03-25 at 10.40.19.jpeg" alt="QR Code Pix" id="pixQrImage">
+          <div class="plano-preco-destaque">
+            <div>
+              <div class="valor">R$9<span>,99/mês</span></div>
+              <div style="font-size:12px;color:#888;margin-top:4px;">Cancele quando quiser</div>
             </div>
-
-            <div class="pix-info">
-              <p class="pix-title">Pagamento via Pix</p>
-              <p class="pix-description">
-                Aponte a câmera do seu banco para o QR Code ou copie a chave Pix abaixo.
-              </p>
-
-              <div class="pix-code-box">
-                <input type="text" id="pixCode" readonly value="82408b72-9d4f-4c2f-8391-96b789f18ea8">
-                <button type="button" id="copyPixBtn">Copiar Pix</button>
-              </div>
-
-              <p class="pix-note">
-                Você escolhe o valor que quer pagar. Este app foi criado para ser acessível a todos.
-              </p>
-            </div>
+            <div class="badge-mensal">Assinatura</div>
           </div>
+
+          <ul class="plano-itens">
+            <li><span class="ic">🎬</span> Filmes e séries em HD</li>
+            <li><span class="ic">⚔️</span> Animes completos e atualizados</li>
+            <li><span class="ic">📖</span> Mangás ilimitados</li>
+            <li><span class="ic">📡</span> Canais ao vivo 24h</li>
+            <li><span class="ic">📱</span> Funciona no celular e no PC</li>
+            <li><span class="ic">🔒</span> Pagamento seguro via Stripe</li>
+          </ul>
+
+          <a href="https://buy.stripe.com/dRm7sEdOs0Jt4yd8F0gUM02"
+             target="_blank"
+             class="btn-stripe"
+             id="btnAssinar">
+            ▶ Assinar agora — R$9,99/mês
+          </a>
+
+          <p class="plano-nota">
+            Ao assinar você concorda com os <a href="#">Termos de uso</a>.<br>
+            Renovação automática mensal. Cancele a qualquer momento.
+          </p>
         </div>
       </div>
 
-      <!-- Lado direito: formulário de login -->
+      <!-- DIREITO: formulário de login -->
       <div class="auth-right">
         <div class="auth-box">
           <h2>Entrar</h2>
+
+          <!-- Banner aparece quando redirecionado por falta de assinatura -->
+          <div class="banner-sem-assinatura" id="bannerSemAssinatura">
+            🔒 <strong>Acesso restrito.</strong>
+            Faça login e <a href="https://buy.stripe.com/dRm7sEdOs0Jt4yd8F0gUM02" target="_blank">assine por R$9,99/mês</a> para continuar assistindo.
+          </div>
 
           <form id="loginForm">
             <div class="input-group">
@@ -160,15 +257,21 @@
   <script src="pwa/register-sw.js"></script>
 
   <script>
-    // ── Preview slideshow na tela de login ───────────────────────────────────
-    // Busca posters do catálogo para mostrar como preview animado de fundo
+    // Banner sem assinatura
+    (function() {
+      if (new URLSearchParams(window.location.search).get("sem_assinatura") === "1") {
+        document.getElementById("bannerSemAssinatura").style.display = "block";
+      }
+    })();
+
+    // Slideshow de fundo + cards flutuantes
     (async function initPreview() {
       const API = "https://tvxbox-backend-1.onrender.com";
       let itens = [];
-
       try {
+        const token = (() => { try { return JSON.parse(localStorage.getItem("sb_token")); } catch { return ""; } })();
         const r = await fetch(API + "/catalogo", {
-          headers: { "Authorization": "Bearer " + (JSON.parse(localStorage.getItem("sb_token")) || "") }
+          headers: { "Authorization": "Bearer " + token }
         });
         if (r.ok) {
           const data = await r.json();
@@ -180,74 +283,48 @@
           ].filter(i => i.poster);
         }
       } catch {}
-
-      if (!itens.length && typeof catalogo !== "undefined") {
-        itens = [
-          ...(catalogo.destaques || []),
-          ...(catalogo.animes    || []),
-          ...(catalogo.series    || []),
-        ].filter(i => i.poster);
-      }
-
       if (!itens.length) return;
 
-      // ── Slideshow de fundo ──────────────────────────────────────────────
+      // Slideshow
       const bgEl = document.getElementById("bgSlideshow");
       itens.forEach((item, i) => {
-        const slide = document.createElement("div");
-        slide.className = "slide" + (i === 0 ? " ativo" : "");
-        slide.style.backgroundImage = `url('${item.poster}')`;
-        bgEl.appendChild(slide);
+        const s = document.createElement("div");
+        s.className = "slide" + (i === 0 ? " ativo" : "");
+        s.style.backgroundImage = `url('${item.poster}')`;
+        bgEl.appendChild(s);
       });
-
-      let atualSlide = 0;
+      let cur = 0;
       const slides = bgEl.querySelectorAll(".slide");
       setInterval(() => {
-        slides[atualSlide].classList.remove("ativo");
-        atualSlide = (atualSlide + 1) % slides.length;
-        slides[atualSlide].classList.add("ativo");
+        slides[cur].classList.remove("ativo");
+        cur = (cur + 1) % slides.length;
+        slides[cur].classList.add("ativo");
       }, 4000);
 
-      // ── Cards flutuantes ─────────────────────────────────────────────────
+      // Cards flutuantes
       const cardsEl = document.getElementById("previewCards");
-      // Posições predefinidas (lado esquerdo da tela)
       const posicoes = [
-        { left: "2%",  top: "8%"  },
-        { left: "16%", top: "5%"  },
-        { left: "30%", top: "10%" },
-        { left: "7%",  top: "45%" },
-        { left: "22%", top: "42%" },
-        { left: "35%", top: "48%" },
-        { left: "4%",  top: "72%" },
-        { left: "18%", top: "70%" },
-        { left: "32%", top: "75%" },
+        { left:"2%",  top:"8%"  }, { left:"16%", top:"5%"  }, { left:"30%", top:"10%" },
+        { left:"7%",  top:"45%" }, { left:"22%", top:"42%" }, { left:"35%", top:"48%" },
+        { left:"4%",  top:"72%" }, { left:"18%", top:"70%" }, { left:"32%", top:"75%" },
       ];
-
-      // Embaralha para variar
-      const embaralhados = [...itens].sort(() => Math.random() - 0.5).slice(0, posicoes.length);
-
-      embaralhados.forEach((item, i) => {
+      [...itens].sort(() => Math.random() - 0.5).slice(0, posicoes.length).forEach((item, i) => {
         const card = document.createElement("div");
         card.className = "preview-float-card";
-        card.style.left           = posicoes[i].left;
-        card.style.top            = posicoes[i].top;
+        card.style.left = posicoes[i].left;
+        card.style.top  = posicoes[i].top;
         card.style.animationDelay = `${i * 0.18}s`;
         card.innerHTML = `<img src="${item.poster}" alt="${item.titulo}" loading="lazy">`;
         cardsEl.appendChild(card);
       });
-
-      // A cada 6s troca alguns cards aleatoriamente
       setInterval(() => {
-        const cards     = cardsEl.querySelectorAll(".preview-float-card");
-        const idxTrocar = Math.floor(Math.random() * cards.length);
-        const novoItem  = itens[Math.floor(Math.random() * itens.length)];
-        const card      = cards[idxTrocar];
-        card.style.opacity   = "0";
-        card.style.transform = "translateY(20px) scale(0.92)";
-        card.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+        const cards = cardsEl.querySelectorAll(".preview-float-card");
+        const card  = cards[Math.floor(Math.random() * cards.length)];
+        const novo  = itens[Math.floor(Math.random() * itens.length)];
+        card.style.cssText += "opacity:0;transform:translateY(20px) scale(0.92);transition:opacity .5s,transform .5s;";
         setTimeout(() => {
-          card.querySelector("img").src = novoItem.poster;
-          card.style.opacity   = "0.85";
+          card.querySelector("img").src = novo.poster;
+          card.style.opacity = "0.85";
           card.style.transform = "translateY(0) scale(1)";
         }, 500);
       }, 6000);
@@ -255,4 +332,3 @@
   </script>
 </body>
 </html>
- 
