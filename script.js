@@ -12,7 +12,10 @@ function getPerfilId() { return ls.get("sb_perfil_id"); }
 
 function headers(comPerfil = false) {
   const h = { "Content-Type": "application/json", "Authorization": `Bearer ${getToken()}` };
-  if (comPerfil) h["x-perfil-id"] = getPerfilId();
+  if (comPerfil) {
+    const perfilId = getPerfilId();
+    if (perfilId) h["x-perfil-id"] = perfilId;
+  }
   return h;
 }
 
