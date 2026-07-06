@@ -329,7 +329,7 @@
 
       // URL da ROM via backend (evita CORS, autentica no B2)
       // O backend serve: GET /video/rom/:fileName
-      const API = (window.API_URL || "https://smartbox-backend.onrender.com");
+      const API = (window.API_URL || "https://tvxbox-backend-1.onrender.com");
       const romUrl = `${API}/video/rom/${encodeURIComponent(jogo.romFile)}`;
 
       // Limpa container caso tenha carregado antes
