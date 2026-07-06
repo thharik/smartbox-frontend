@@ -5,7 +5,7 @@ const ls = {
   del: k => localStorage.removeItem(k),
 };
 
-const API = "https://tvxbox-backend-1.onrender.com";
+const API = "https://smartbox-backend.onrender.com";
 
 function getToken()    { return ls.get("sb_token"); }
 function getPerfilId() { return ls.get("sb_perfil_id"); }
