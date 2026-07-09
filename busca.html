@@ -288,34 +288,48 @@
     }
 
     function renderItem(item) {
-      const cat = item.tipo === "AoVivo" ? null : (() => {
-        if (typeof buscarItemEmTodoCatalogo === "function") {
-          return buscarItemEmTodoCatalogo(item.id).cat;
-        }
-        return null;
-      })();
-      const href = item.tipo === "AoVivo" || item.video
-        ? `assistir.html?canal=${encodeURIComponent(item.id)}`
-        : `detalhe.html?id=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(cat || "rowAnimes")}`;
+    const cat = item.tipo === "AoVivo" ? null : (() => {
+      if (typeof buscarItemEmTodoCatalogo === "function") {
+        return buscarItemEmTodoCatalogo(item.id).cat;
+      }
+      return null;
+    })();
 
-      const div = document.createElement("div");
-      div.className = "busca-item";
-      div.dataset.titulo = (item.titulo || "").toLowerCase();
-      div.dataset.tipo   = item.tipo || "";
-      div.innerHTML = `
-        <div class="busca-item-poster">
-          <img src="${item.poster || "assets/posters/placeholder.jpg"}" alt="${item.titulo}" loading="lazy">
-        </div>
-        <div class="busca-item-info">
-          <p class="busca-item-titulo">${item.titulo}</p>
-          <span class="busca-item-tipo">${item.tipo || "Conteúdo"}</span>
-          ${item.descricao ? `<p class="busca-item-desc">${item.descricao}</p>` : ""}
-        </div>
-        <span class="busca-item-seta">›</span>
-      `;
-      div.addEventListener("click", () => { window.location.href = href; });
-      return div;
-    }
+    const href = item.tipo === "AoVivo" || item.video
+      ? `assistir.html?canal=${encodeURIComponent(item.id)}`
+      : `detalhe.html?id=${encodeURIComponent(item.id)}&categoria=${encodeURIComponent(cat || "rowAnimes")}`;
+
+    const div = document.createElement("div");
+    div.className = "busca-item";
+    div.dataset.titulo = (item.titulo || "").toLowerCase();
+    div.dataset.tipo   = item.tipo || "";
+
+    const poster = item.poster || PLACEHOLDER_IMG;
+
+    div.innerHTML = `
+      <div class="busca-item-poster">
+        <img
+          src="${poster}"
+          alt="${item.titulo}"
+          loading="lazy"
+          onerror="this.onerror=null;this.src='${PLACEHOLDER_IMG}'">
+      </div>
+
+      <div class="busca-item-info">
+        <p class="busca-item-titulo">${item.titulo}</p>
+        <span class="busca-item-tipo">${item.tipo || "Conteúdo"}</span>
+        ${item.descricao ? `<p class="busca-item-desc">${item.descricao}</p>` : ""}
+      </div>
+
+      <span class="busca-item-seta">›</span>
+    `;
+
+    div.addEventListener("click", () => {
+      window.location.href = href;
+    });
+
+    return div;
+  }
 
     function aplicarFiltros(lista) {
       return lista.filter(i => {

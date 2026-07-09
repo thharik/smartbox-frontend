@@ -366,6 +366,7 @@ function removerPreview() {
   clearTimeout(previewTimeout);
 }
 
+const PLACEHOLDER_IMG ="https://via.placeholder.com/300x450/141414/ffffff?text=TVXBOX";
 // ─── Criar card ───────────────────────────────────────────────────────────────
 function criarCard(item, onClick) {
   const card = document.createElement("div");
@@ -376,7 +377,7 @@ function criarCard(item, onClick) {
   card.dataset.descricao = (item.descricao || "").toLowerCase().slice(0, 200);
 
   // Lazy load com fade-in suave
-  const posterSrc = item.poster || "assets/posters/placeholder.jpg";
+  const posterSrc = item.poster || PLACEHOLDER_IMG;
   card.innerHTML = `
     <img
       src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
@@ -390,28 +391,42 @@ function criarCard(item, onClick) {
 
   // IntersectionObserver para carregar imagem quando o card aparecer
   const img = card.querySelector("img");
+
   if ("IntersectionObserver" in window) {
     const obs = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting) {
         img.src = posterSrc;
-        img.onload = () => { img.style.opacity = "1"; };
-        img.onerror = () => { img.src = "assets/posters/placeholder.jpg"; img.style.opacity = "1"; };
+
+        img.onload = () => {
+          img.style.opacity = "1";
+        };
+
+        img.onerror = () => {
+          // Evita loop infinito caso a imagem também falhe
+          img.onerror = null;
+          img.src = PLACEHOLDER_IMG;
+          img.style.opacity = "1";
+        };
+
         obs.disconnect();
       }
-    }, { rootMargin: "200px" }); // começa a carregar 200px antes de aparecer
+    }, { rootMargin: "200px" });
+
     obs.observe(card);
+
   } else {
     img.src = posterSrc;
-    img.style.opacity = "1";
-  }
 
-  card.addEventListener("click", onClick);
-  if (window.matchMedia("(hover:hover)").matches) {
-    card.addEventListener("mouseenter", () => { previewTimeout = setTimeout(() => criarPreview(item, card), 500); });
-    card.addEventListener("mouseleave", removerPreview);
+    img.onload = () => {
+      img.style.opacity = "1";
+    };
+
+    img.onerror = () => {
+      img.onerror = null;
+      img.src = PLACEHOLDER_IMG;
+      img.style.opacity = "1";
+    };
   }
-  return card;
-}
 
 // ─── Renderizar rows ──────────────────────────────────────────────────────────
 function renderRow(idContainer, lista, tipoClique) {
@@ -567,7 +582,7 @@ function renderContinuarAssistindo() {
     const epCatalog = catalogItem?.temporadas?.flatMap(t => t.episodios || []).find(e => e.id === item.episodio_id);
 
     // Usa capa do episódio (cena onde parou), senão poster da série
-    const imgSrc = item.capa || epCatalog?.capa || item.poster || catalogItem?.poster || "assets/posters/placeholder.jpg";
+    const imgSrc = item.capa || epCatalog?.capa || item.poster || catalogItem?.poster || PLACEHOLDER_IMG;
     const tituloExib  = item.titulo    || catalogItem?.titulo    || "Sem título";
     const epTituloExib = item.ep_titulo || epCatalog?.titulo     || "";
 
