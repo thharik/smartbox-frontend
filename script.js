@@ -375,7 +375,7 @@ function criarCard(item, onClick) {
   card.dataset.tipo      = item.tipo || "";
   card.dataset.genero    = (item.generos || []).join(" ").toLowerCase();
   card.dataset.descricao = (item.descricao || "").toLowerCase().slice(0, 200);
-
+}
   // Lazy load com fade-in suave
   const posterSrc = item.poster || PLACEHOLDER_IMG;
   card.innerHTML = `
