@@ -512,6 +512,11 @@ function renderFavoritos() {
 
 // ─── Salvar progresso ─────────────────────────────────────────────────────────
 async function salvarProgresso(payload) {
+  // Sem perfil selecionado o backend sempre vai recusar com 400 — nem tenta,
+  // e não deixa entrar na fila de sincronização (senão fica acumulando pra
+  // sempre, já que nunca vai ter como reenviar com sucesso sem perfil).
+  if (!getPerfilId()) return;
+
   const res = await apiFetch("/progresso", { method:"POST", headers:headers(true), body:JSON.stringify(payload) });
   if (!res) {
     const fila = ls.get("sb_fila_sync") || [];
@@ -1872,8 +1877,12 @@ function configurarUsuario() {
   // carregarCatalogo já renderiza do cache imediatamente (sem esperar API)
   await carregarCatalogo();
   const temPerfil = !!getPerfilId();
-  const naHome    = !!(document.getElementById("rowDestaques"));
-  if (!temPerfil && naHome) await mostrarTelaPerfis();
+  // Antes só mostrava a tela "Quem está assistindo?" na home (naHome).
+  // Isso deixava a assistir.html tocar vídeo sem perfil selecionado quando o
+  // usuário caía direto nela (deep link, PWA reaberto, storage limpo), o que
+  // fazia todo POST /progresso falhar com "Perfil não selecionado".
+  // Agora a checagem roda em qualquer página.
+  if (!temPerfil) await mostrarTelaPerfis();
   await carregarUserData();
   configurarUsuario();
   // renderHome/AoVivo etc já foram chamados por carregarCatalogo;

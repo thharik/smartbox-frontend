@@ -301,7 +301,7 @@
       card.className = "jogo-card";
       card.innerHTML = `
         <img src="${jogo.poster}" alt="${jogo.titulo}" loading="lazy"
-             onerror="this.src='assets/posters/placeholder.jpg'">
+             onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450/141414/ffffff?text=TVXBOX';"
         <div class="jogo-play-overlay">▶</div>
         <div class="jogo-info">
           <h3>${jogo.titulo}</h3>
