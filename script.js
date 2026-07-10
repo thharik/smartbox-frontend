@@ -366,18 +366,18 @@ function removerPreview() {
   clearTimeout(previewTimeout);
 }
 
-const PLACEHOLDER_IMG ="https://via.placeholder.com/300x450/141414/ffffff?text=TVXBOX";
+const PLACEHOLDER_IMG = "https://via.placeholder.com/300x450/141414/ffffff?text=TVXBOX";
+
 // ─── Criar card ───────────────────────────────────────────────────────────────
 function criarCard(item, onClick) {
   const card = document.createElement("div");
   card.className = "poster-card";
 
-  card.dataset.titulo    = (item.titulo || "").toLowerCase();
-  card.dataset.tipo      = item.tipo || "";
-  card.dataset.genero    = (item.generos || []).join(" ").toLowerCase();
+  card.dataset.titulo = (item.titulo || "").toLowerCase();
+  card.dataset.tipo = item.tipo || "";
+  card.dataset.genero = (item.generos || []).join(" ").toLowerCase();
   card.dataset.descricao = (item.descricao || "").toLowerCase().slice(0, 200);
 
-  // Lazy load com fade-in suave
   const posterSrc = item.poster || PLACEHOLDER_IMG;
 
   card.innerHTML = `
@@ -396,17 +396,38 @@ function criarCard(item, onClick) {
 
   const img = card.querySelector("img");
 
-  if (img) {
+  if ("IntersectionObserver" in window && img) {
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        img.src = posterSrc;
+
+        img.onload = () => {
+          img.style.opacity = "1";
+        };
+
+        img.onerror = () => {
+          img.onerror = null;
+          img.src = PLACEHOLDER_IMG;
+          img.style.opacity = "1";
+        };
+
+        obs.disconnect();
+      }
+    }, { rootMargin: "200px" });
+
+    obs.observe(card);
+  } else if (img) {
+    img.src = posterSrc;
+
     img.onload = () => {
       img.style.opacity = "1";
     };
 
     img.onerror = () => {
+      img.onerror = null;
       img.src = PLACEHOLDER_IMG;
       img.style.opacity = "1";
     };
-
-    img.src = img.dataset.src;
   }
 
   if (typeof onClick === "function") {
@@ -415,7 +436,6 @@ function criarCard(item, onClick) {
 
   return card;
 }
-
   // IntersectionObserver para carregar imagem quando o card aparecer
   const img = card.querySelector("img");
 
