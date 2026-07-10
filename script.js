@@ -371,23 +371,50 @@ const PLACEHOLDER_IMG ="https://via.placeholder.com/300x450/141414/ffffff?text=T
 function criarCard(item, onClick) {
   const card = document.createElement("div");
   card.className = "poster-card";
+
   card.dataset.titulo    = (item.titulo || "").toLowerCase();
   card.dataset.tipo      = item.tipo || "";
   card.dataset.genero    = (item.generos || []).join(" ").toLowerCase();
   card.dataset.descricao = (item.descricao || "").toLowerCase().slice(0, 200);
-}
+
   // Lazy load com fade-in suave
   const posterSrc = item.poster || PLACEHOLDER_IMG;
+
   card.innerHTML = `
     <img
       src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
       data-src="${posterSrc}"
-      alt="${item.titulo}"
+      alt="${item.titulo || ""}"
       style="opacity:0;transition:opacity .3s ease;"
       loading="lazy"
     >
-    <div class="info"><h3>${item.titulo}</h3><p>${item.tipo || ""}</p></div>
+    <div class="info">
+      <h3>${item.titulo || ""}</h3>
+      <p>${item.tipo || ""}</p>
+    </div>
   `;
+
+  const img = card.querySelector("img");
+
+  if (img) {
+    img.onload = () => {
+      img.style.opacity = "1";
+    };
+
+    img.onerror = () => {
+      img.src = PLACEHOLDER_IMG;
+      img.style.opacity = "1";
+    };
+
+    img.src = img.dataset.src;
+  }
+
+  if (typeof onClick === "function") {
+    card.addEventListener("click", () => onClick(item));
+  }
+
+  return card;
+}
 
   // IntersectionObserver para carregar imagem quando o card aparecer
   const img = card.querySelector("img");
