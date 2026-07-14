@@ -1,4 +1,4 @@
-const CACHE_NAME = "smartbox-v1";
+const CACHE_NAME = "smartbox-v2";
 const CACHE_STATIC = [
   "/",
   "/index.html",
