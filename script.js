@@ -436,44 +436,6 @@ function criarCard(item, onClick) {
 
   return card;
 }
-  // IntersectionObserver para carregar imagem quando o card aparecer
-  const img = card.querySelector("img");
-
-  if ("IntersectionObserver" in window) {
-    const obs = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
-        img.src = posterSrc;
-
-        img.onload = () => {
-          img.style.opacity = "1";
-        };
-
-        img.onerror = () => {
-          // Evita loop infinito caso a imagem também falhe
-          img.onerror = null;
-          img.src = PLACEHOLDER_IMG;
-          img.style.opacity = "1";
-        };
-
-        obs.disconnect();
-      }
-    }, { rootMargin: "200px" });
-
-    obs.observe(card);
-
-  } else {
-    img.src = posterSrc;
-
-    img.onload = () => {
-      img.style.opacity = "1";
-    };
-
-    img.onerror = () => {
-      img.onerror = null;
-      img.src = PLACEHOLDER_IMG;
-      img.style.opacity = "1";
-    };
-  }
 
 // ─── Renderizar rows ──────────────────────────────────────────────────────────
 function renderRow(idContainer, lista, tipoClique) {
