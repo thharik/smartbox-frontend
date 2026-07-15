@@ -1,4 +1,4 @@
-const CACHE_NAME = "smartbox-v2";
+const CACHE_NAME = "smartbox-v3";
 const CACHE_STATIC = [
   "/",
   "/index.html",
@@ -14,10 +14,18 @@ const CACHE_STATIC = [
   "/pwa/manifest.json",
 ];
 
-// Instalar: cacheia arquivos estáticos
+// Instalar: cacheia arquivos estáticos (individualmente, sem derrubar tudo se um falhar)
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CACHE_STATIC))
+    caches.open(CACHE_NAME).then((cache) => {
+      return Promise.all(
+        CACHE_STATIC.map((url) =>
+          cache.add(url).catch((err) => {
+            console.warn("[SW] Falha ao cachear:", url, err);
+          })
+        )
+      );
+    })
   );
   self.skipWaiting();
 });
