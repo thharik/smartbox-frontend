@@ -1,4 +1,4 @@
-const CACHE_NAME = "smartbox-v3";
+const CACHE_NAME = "smartbox-v4";
 const CACHE_STATIC = [
   "/",
   "/index.html",
@@ -10,7 +10,6 @@ const CACHE_STATIC = [
   "/assistir.html",
   "/detalhe.html",
   "/ao-vivo.html",
-  "/youtube.html",
   "/pwa/manifest.json",
 ];
 
@@ -81,8 +80,12 @@ self.addEventListener("fetch", (e) => {
       }).catch(() => {
         // Fallback para HTML: retorna index.html (SPA offline)
         if (e.request.headers.get("accept")?.includes("text/html")) {
-          return caches.match("/index.html");
+          return caches.match("/index.html").then(
+            (fallback) => fallback || new Response("Offline", { status: 503, statusText: "Offline" })
+          );
         }
+        // Fallback genérico para imagens/outros recursos: nunca deixa undefined
+        return new Response("", { status: 504, statusText: "Recurso indisponível" });
       });
     })
   );
