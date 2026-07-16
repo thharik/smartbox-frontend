@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "br.com.tvxbox.www.twa",
+        "sha256_cert_fingerprints": ["65:07:A7:96:DE:71:65:5A:4E:7F:F5:8A:5B:A9:EB:C5:29:86:F6:DD:4C:7D:15:C5:9E:01:8F:28:9A:EA:2A:D7"]
+      }
+    }]
