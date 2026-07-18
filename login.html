@@ -142,6 +142,7 @@
       margin-bottom: 12px;
     }
     .btn-stripe:hover { background: #c40812; transform: translateY(-1px); }
+    .btn-stripe:disabled { opacity: .6; cursor: default; transform: none; }
 
     .plano-nota {
       font-size: 11px;
@@ -163,12 +164,71 @@
       line-height: 1.5;
       display: none;
     }
-    .banner-sem-assinatura a { color: #e50914; font-weight: 700; }
+    .banner-sem-assinatura a { color: #e50914; font-weight: 700; cursor: pointer; }
 
     @media (max-width: 768px) {
       .plano-panel { max-width: 100%; }
       .plano-preco-destaque .valor { font-size: 28px; }
     }
+
+    /* ── Modal do Pix ── */
+    .pix-modal-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .pix-modal-overlay.aberto { display: flex; }
+    .pix-modal {
+      background: #141414;
+      border: 1.5px solid #2a2a2a;
+      border-radius: 18px;
+      padding: 28px 24px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+    }
+    .pix-modal-fechar {
+      position: absolute; top: 12px; right: 16px;
+      background: none; border: none; color: #888;
+      font-size: 22px; cursor: pointer; line-height: 1;
+    }
+    .pix-modal-fechar:hover { color: #fff; }
+    .pix-modal h3 { color: #fff; font-size: 18px; margin-bottom: 4px; }
+    .pix-modal .pix-sub { color: #888; font-size: 13px; margin-bottom: 18px; }
+    .pix-modal .pix-qr-wrap {
+      background: #fff; border-radius: 12px; padding: 12px;
+      display: inline-block; margin-bottom: 16px;
+    }
+    .pix-modal .pix-qr-wrap img { width: 200px; height: 200px; display: block; }
+    .pix-modal .pix-copiar-row {
+      display: flex; gap: 8px; margin-bottom: 16px;
+    }
+    .pix-modal .pix-copiar-row input {
+      flex: 1; min-width: 0;
+      background: #1e1e1e; border: 1px solid #333; border-radius: 8px;
+      color: #ccc; font-size: 11px; padding: 10px 8px;
+    }
+    .pix-modal .pix-copiar-row button {
+      background: #e50914; color: #fff; border: none; border-radius: 8px;
+      padding: 0 14px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+    }
+    .pix-modal .pix-copiar-row button:hover { background: #c40812; }
+    .pix-status {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-size: 13px; color: #aaa; min-height: 20px;
+    }
+    .pix-status.sucesso { color: #4ade80; font-weight: 700; }
+    .pix-status.erro { color: #f87171; }
+    .pix-spinner {
+      width: 14px; height: 14px;
+      border: 2px solid #333; border-top-color: #e50914;
+      border-radius: 50%; animation: girar 0.8s linear infinite;
+    }
+    @keyframes girar { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -202,19 +262,16 @@
             <li><span class="ic">📖</span> Mangás </li>
             <li><span class="ic">📡</span> Canais ao vivo</li>
             <li><span class="ic">📱</span> Funciona no celular e no PC</li>
-            <li><span class="ic">🔒</span> Pagamento seguro via Stripe</li>
+            <li><span class="ic">🔒</span> Pagamento via Pix</li>
           </ul>
 
-          <a href="https://buy.stripe.com/dRm7sEdOs0Jt4yd8F0gUM02"
-             target="_blank"
-             class="btn-stripe"
-             id="btnAssinar">
-            ▶ Assinar agora — R$9,99/mês
-          </a>
+          <button type="button" class="btn-stripe" id="btnAssinar">
+            ▶ Assinar agora — R$9,99/mês (Pix)
+          </button>
 
           <p class="plano-nota">
             Ao assinar você concorda com os <a href="#">Termos de uso</a>.<br>
-            Renovação automática mensal. Cancele a qualquer momento.
+            Pagamento via Pix, renovado mensalmente. Cancele a qualquer momento.
           </p>
         </div>
       </div>
@@ -227,7 +284,7 @@
           <!-- Banner aparece quando redirecionado por falta de assinatura -->
           <div class="banner-sem-assinatura" id="bannerSemAssinatura">
             🔒 <strong>Acesso restrito.</strong>
-            Faça login e <a href="https://buy.stripe.com/dRm7sEdOs0Jt4yd8F0gUM02" target="_blank">assine por R$9,99/mês</a> para continuar assistindo.
+            Faça login e <a id="linkAssinarBanner">assine por R$9,99/mês via Pix</a> para continuar assistindo.
           </div>
 
           <form id="loginForm">
@@ -254,10 +311,31 @@
     </div>
   </div>
 
+  <!-- Modal do Pix -->
+  <div class="pix-modal-overlay" id="pixModalOverlay">
+    <div class="pix-modal">
+      <button type="button" class="pix-modal-fechar" id="pixFechar">×</button>
+      <h3>Pague com Pix</h3>
+      <p class="pix-sub">Escaneie o QR code ou copie o código abaixo</p>
+
+      <div id="pixConteudo">
+        <!-- preenchido via JS -->
+      </div>
+
+      <div class="pix-status" id="pixStatus"></div>
+    </div>
+  </div>
+
   <script src="auth.js"></script>
   <script src="pwa/register-sw.js"></script>
 
   <script>
+    const API = "https://smartbox-backend.onrender.com";
+
+    function getToken() {
+      try { return JSON.parse(localStorage.getItem("sb_token")); } catch { return ""; }
+    }
+
     // Banner sem assinatura
     (function() {
       if (new URLSearchParams(window.location.search).get("sem_assinatura") === "1") {
@@ -267,10 +345,9 @@
 
     // Slideshow de fundo + cards flutuantes
     (async function initPreview() {
-      const API = "https://smartbox-backend.onrender.com";
       let itens = [];
       try {
-        const token = (() => { try { return JSON.parse(localStorage.getItem("sb_token")); } catch { return ""; } })();
+        const token = getToken();
         const r = await fetch(API + "/catalogo", {
           headers: { "Authorization": "Bearer " + token }
         });
@@ -329,6 +406,115 @@
           card.style.transform = "translateY(0) scale(1)";
         }, 500);
       }, 6000);
+    })();
+
+    // ── Fluxo de assinatura via Pix ─────────────────────────────────────────
+    (function() {
+      const overlay      = document.getElementById("pixModalOverlay");
+      const conteudo      = document.getElementById("pixConteudo");
+      const statusEl      = document.getElementById("pixStatus");
+      const btnAssinar    = document.getElementById("btnAssinar");
+      const btnFechar     = document.getElementById("pixFechar");
+      const linkBanner    = document.getElementById("linkAssinarBanner");
+
+      let pollTimer = null;
+
+      function pararPolling() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      }
+
+      function fecharModal() {
+        pararPolling();
+        overlay.classList.remove("aberto");
+      }
+
+      async function iniciarAssinatura() {
+        const token = getToken();
+        if (!token) {
+          alert("Faça login primeiro para assinar.");
+          document.getElementById("loginEmail")?.focus();
+          return;
+        }
+
+        // Abre o modal já em estado de carregamento
+        conteudo.innerHTML = "";
+        statusEl.className = "pix-status";
+        statusEl.innerHTML = `<span class="pix-spinner"></span> Gerando cobrança Pix...`;
+        overlay.classList.add("aberto");
+
+        try {
+          const r = await fetch(API + "/assinatura/pix", {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + token,
+              "Content-Type": "application/json",
+            },
+          });
+          const data = await r.json();
+
+          if (!r.ok) {
+            statusEl.className = "pix-status erro";
+            statusEl.textContent = data.mensagem || "Erro ao gerar Pix. Tente novamente.";
+            return;
+          }
+
+          conteudo.innerHTML = `
+            <div class="pix-qr-wrap">
+              <img src="data:image/png;base64,${data.qrCodeImg}" alt="QR Code Pix">
+            </div>
+            <div class="pix-copiar-row">
+              <input type="text" id="pixCopiaCola" value="${data.qrCode}" readonly>
+              <button type="button" id="pixBtnCopiar">Copiar</button>
+            </div>
+          `;
+
+          document.getElementById("pixBtnCopiar").addEventListener("click", () => {
+            const input = document.getElementById("pixCopiaCola");
+            navigator.clipboard?.writeText(data.qrCode)
+              .then(() => {
+                const btn = document.getElementById("pixBtnCopiar");
+                btn.textContent = "Copiado!";
+                setTimeout(() => { btn.textContent = "Copiar"; }, 2000);
+              })
+              .catch(() => { input.select(); document.execCommand("copy"); });
+          });
+
+          statusEl.className = "pix-status";
+          statusEl.innerHTML = `<span class="pix-spinner"></span> Aguardando pagamento...`;
+
+          // Checa a cada 4s se o pagamento foi confirmado
+          pollTimer = setInterval(async () => {
+            try {
+              const rv = await fetch(`${API}/assinatura/verificar/${data.orderId}`, {
+                headers: { "Authorization": "Bearer " + token },
+              });
+              const dv = await rv.json();
+
+              if (dv.status === "processed" && dv.statusDetail === "accredited") {
+                pararPolling();
+                statusEl.className = "pix-status sucesso";
+                statusEl.textContent = "✅ Pagamento confirmado! Redirecionando...";
+                setTimeout(() => { window.location.href = "index.html"; }, 1800);
+              } else if (dv.status === "canceled" || dv.status === "expired" || dv.status === "failed") {
+                pararPolling();
+                statusEl.className = "pix-status erro";
+                statusEl.textContent = "O Pix expirou ou falhou. Feche e tente novamente.";
+              }
+            } catch {
+              // silencioso — tenta de novo no próximo ciclo
+            }
+          }, 4000);
+
+        } catch (err) {
+          statusEl.className = "pix-status erro";
+          statusEl.textContent = "Erro de conexão. Tente novamente.";
+        }
+      }
+
+      btnAssinar.addEventListener("click", iniciarAssinatura);
+      linkBanner.addEventListener("click", (e) => { e.preventDefault(); iniciarAssinatura(); });
+      btnFechar.addEventListener("click", fecharModal);
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) fecharModal(); });
     })();
   </script>
 </body>
