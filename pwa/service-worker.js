@@ -1,4 +1,4 @@
-const CACHE_NAME = "smartbox-v4";
+const CACHE_NAME = "smartbox-v5";
 const CACHE_STATIC = [
   "/",
   "/index.html",
@@ -43,11 +43,12 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   const isAPI = url.pathname.startsWith("/auth") ||
-                url.pathname.startsWith("/catalogo") ||
-                url.pathname.startsWith("/favoritos") ||
-                url.pathname.startsWith("/progresso") ||
-                url.pathname.startsWith("/perfis") ||
-                url.pathname.startsWith("/video");
+              url.pathname.startsWith("/catalogo") ||
+              url.pathname.startsWith("/favoritos") ||
+              url.pathname.startsWith("/progresso") ||
+              url.pathname.startsWith("/perfis") ||
+              url.pathname.startsWith("/video") ||
+              url.pathname.startsWith("/assinatura");
 
   if (isAPI) {
     // Network-first: tenta servidor, cai no cache se offline
