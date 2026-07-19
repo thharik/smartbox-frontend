@@ -1,30 +1,10 @@
 /*
   auth.js — cuida do login e cadastro
   Chama o backend (server.js) nas rotas /auth/login e /auth/register
-
-  IMPORTANTE: se você estiver testando no PC, o backend precisa estar
-  rodando com: node backend/server.js
-  Se o site já estiver no ar (Railway), não precisa mudar nada.
 */
 
-const loginForm   = document.getElementById("loginForm");
-const cadastroForm= document.getElementById("cadastroForm");
-const copyPixBtn  = document.getElementById("copyPixBtn");
-const pixCode     = document.getElementById("pixCode");
-
-// Botão copiar chave Pix
-if (copyPixBtn && pixCode) {
-  copyPixBtn.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(pixCode.value);
-      copyPixBtn.textContent = "Copiado!";
-      setTimeout(() => { copyPixBtn.textContent = "Copiar Pix"; }, 1400);
-    } catch {
-      copyPixBtn.textContent = "Erro ao copiar";
-      setTimeout(() => { copyPixBtn.textContent = "Copiar Pix"; }, 1400);
-    }
-  });
-}
+const loginForm    = document.getElementById("loginForm");
+const cadastroForm = document.getElementById("cadastroForm");
 
 // Login
 if (loginForm) {
@@ -49,11 +29,9 @@ if (loginForm) {
         return;
       }
 
-      // Salva o token e e-mail no localStorage
       localStorage.setItem("sb_token", JSON.stringify(dados.token));
       localStorage.setItem("usuarioEmail", dados.email);
 
-      // Vai para a página inicial
       window.location.href = "index.html";
     } catch {
       msg.textContent = "Erro de conexão. Verifique se o servidor está rodando.";
@@ -84,8 +62,19 @@ if (cadastroForm) {
         return;
       }
 
-      msg.textContent = "Conta criada! Redirecionando...";
-      setTimeout(() => { window.location.href = "login.html"; }, 800);
+      // ✅ O /register agora já devolve um token — loga automaticamente,
+      // sem pedir pra pessoa digitar a senha de novo numa segunda tela.
+      if (dados.token) {
+        localStorage.setItem("sb_token", JSON.stringify(dados.token));
+        localStorage.setItem("usuarioEmail", dados.email);
+
+        msg.textContent = "Conta criada! Redirecionando para assinatura...";
+        setTimeout(() => { window.location.href = "planos.html"; }, 800);
+      } else {
+        // fallback, caso o backend antigo (sem token) ainda esteja no ar
+        msg.textContent = "Conta criada! Redirecionando...";
+        setTimeout(() => { window.location.href = "login.html"; }, 800);
+      }
     } catch {
       msg.textContent = "Erro de conexão. Verifique se o servidor está rodando.";
     }

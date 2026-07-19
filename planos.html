@@ -115,12 +115,6 @@
       color: #fff;
     }
     .btn-assinar.primario:hover { background: #c40812; }
-    .btn-assinar.secundario {
-      background: #2a2a2a;
-      color: #ddd;
-      border: 1px solid #444;
-    }
-    .btn-assinar.secundario:hover { background: #333; }
     .btn-assinar:disabled { opacity: .5; cursor: not-allowed; }
 
     /* ── Status de assinatura ativa ── */
@@ -195,6 +189,65 @@
       .plano-card { width: 100%; max-width: 340px; }
       .garantias { gap: 16px; }
     }
+
+    /* ── Modal do Pix (mesmo padrão do login.html) ── */
+    .pix-modal-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .pix-modal-overlay.aberto { display: flex; }
+    .pix-modal {
+      background: #141414;
+      border: 1.5px solid #2a2a2a;
+      border-radius: 18px;
+      padding: 28px 24px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+    }
+    .pix-modal-fechar {
+      position: absolute; top: 12px; right: 16px;
+      background: none; border: none; color: #888;
+      font-size: 22px; cursor: pointer; line-height: 1;
+    }
+    .pix-modal-fechar:hover { color: #fff; }
+    .pix-modal h3 { color: #fff; font-size: 18px; margin-bottom: 4px; }
+    .pix-modal .pix-sub { color: #888; font-size: 13px; margin-bottom: 18px; }
+    .pix-modal .pix-qr-wrap {
+      background: #fff; border-radius: 12px; padding: 12px;
+      display: inline-block; margin-bottom: 16px;
+    }
+    .pix-modal .pix-qr-wrap img { width: 200px; height: 200px; display: block; }
+    .pix-modal .pix-copiar-row {
+      display: flex; gap: 8px; margin-bottom: 16px;
+    }
+    .pix-modal .pix-copiar-row input {
+      flex: 1; min-width: 0;
+      background: #1e1e1e; border: 1px solid #333; border-radius: 8px;
+      color: #ccc; font-size: 11px; padding: 10px 8px;
+    }
+    .pix-modal .pix-copiar-row button {
+      background: #e50914; color: #fff; border: none; border-radius: 8px;
+      padding: 0 14px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+    }
+    .pix-modal .pix-copiar-row button:hover { background: #c40812; }
+    .pix-status {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-size: 13px; color: #aaa; min-height: 20px;
+    }
+    .pix-status.sucesso { color: #4ade80; font-weight: 700; }
+    .pix-status.erro { color: #f87171; }
+    .pix-spinner {
+      width: 14px; height: 14px;
+      border: 2px solid #333; border-top-color: #e50914;
+      border-radius: 50%; animation: girar 0.8s linear infinite;
+    }
+    @keyframes girar { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -202,7 +255,7 @@
   <div class="planos-hero">
     <a href="index.html" class="logo">TVXBOX</a>
     <h1>Assine e acesse tudo</h1>
-    <p>Filmes, séries, animes e mangás ilimitados. Cancele quando quiser.</p>
+    <p>Filmes, séries, animes e mangás ilimitados. Pagamento via Pix. Cancele quando quiser.</p>
   </div>
 
   <div style="padding: 32px 24px 0; max-width: 900px; margin: 0 auto;">
@@ -226,67 +279,92 @@
       <div class="plano-badge">Plano único</div>
       <p class="plano-nome">Assinatura Mensal</p>
       <p class="plano-preco">R$9<span>,99/mês</span></p>
-      <p class="plano-desc">Acesso completo a todo o conteúdo. Cancele quando quiser.</p>
+      <p class="plano-desc">Acesso completo a todo o conteúdo. Pagamento via Pix. Cancele quando quiser.</p>
       <ul class="plano-itens">
         <li><span class="check">✓</span> Filmes e séries em HD</li>
         <li><span class="check">✓</span> Animes completos e atualizados</li>
         <li><span class="check">✓</span> Mangás ilimitados</li>
         <li><span class="check">✓</span> Canais ao vivo 24h</li>
         <li><span class="check">✓</span> Acesso no celular e no PC</li>
-        <li><span class="check">✓</span> Pagamento seguro via Stripe</li>
+        <li><span class="check">✓</span> Pagamento via Pix — aprovação automática</li>
       </ul>
-      <button class="btn-assinar primario" onclick="iniciarCheckout()">▶ Assinar agora — R$9,99/mês</button>
-      <p style="font-size:11px;color:#666;text-align:center;margin-top:10px;">Renovação automática mensal · Cancele a qualquer momento</p>
+      <button class="btn-assinar primario" id="btnAssinar">📱 Assinar com Pix — R$9,99/mês</button>
+      <p style="font-size:11px;color:#666;text-align:center;margin-top:10px;">Cobrança gerada por Pix a cada mês · Cancele quando quiser, sem multa</p>
     </div>
 
   </div>
 
   <!-- Garantias -->
   <div class="garantias">
-    <div class="garantia-item"><span>🔒</span> Pagamento seguro via Stripe</div>
+    <div class="garantia-item"><span>📱</span> Pagamento via Pix</div>
     <div class="garantia-item"><span>🔄</span> Cancele quando quiser</div>
-    <div class="garantia-item"><span>📱</span> Funciona no celular e PC</div>
+    <div class="garantia-item"><span>⚡</span> Liberação automática</div>
   </div>
 
   <!-- FAQ -->
   <div class="faq">
     <h2>Perguntas frequentes</h2>
     <details class="faq-item">
-      <summary>Posso cancelar a qualquer momento?</summary>
-      <p>Sim. Basta cancelar pelo Stripe antes da próxima cobrança. Você continua com acesso até o fim do período pago.</p>
+      <summary>Como funciona o pagamento por Pix?</summary>
+      <p>Ao clicar em "Assinar com Pix", aparece um QR code e um código "copia e cola". Basta pagar pelo app do seu banco — o acesso é liberado automaticamente assim que o pagamento é confirmado, sem precisar fazer mais nada.</p>
     </details>
     <details class="faq-item">
-      <summary>Quais formas de pagamento são aceitas?</summary>
-      <p>Cartão de crédito e débito (Visa, Mastercard, Elo, Amex) via Stripe, a plataforma de pagamentos mais segura do mundo.</p>
+      <summary>Vocês aceitam cartão de crédito?</summary>
+      <p>No momento, o TVXBOX aceita apenas Pix como forma de pagamento.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Posso cancelar a qualquer momento?</summary>
+      <p>Sim. Como cada cobrança é feita por Pix mês a mês, basta simplesmente não pagar o próximo Pix quando ele for gerado — não existe cobrança automática recorrente no cartão.</p>
     </details>
     <details class="faq-item">
       <summary>Meu acesso é imediato após o pagamento?</summary>
-      <p>Sim. O acesso é liberado instantaneamente assim que o pagamento é confirmado.</p>
+      <p>Sim. O acesso é liberado automaticamente assim que o Pix é confirmado, geralmente em poucos segundos.</p>
     </details>
     <details class="faq-item">
       <summary>Em quantos dispositivos posso assistir?</summary>
-      <p>No plano Mensal: 1 dispositivo por vez. Nos planos Semestral e Anual: 2 dispositivos simultâneos.</p>
+      <p>A assinatura mensal permite acesso pelo celular e pelo computador.</p>
     </details>
   </div>
 
+  <!-- Modal do Pix -->
+  <div class="pix-modal-overlay" id="pixModalOverlay">
+    <div class="pix-modal">
+      <button type="button" class="pix-modal-fechar" id="pixFechar">×</button>
+      <h3>Pague com Pix</h3>
+      <p class="pix-sub">Escaneie o QR code ou copie o código abaixo</p>
+
+      <div id="pixConteudo"></div>
+
+      <div class="pix-status" id="pixStatus"></div>
+    </div>
+  </div>
+
   <script>
-  const STRIPE_LINK = "https://buy.stripe.com/dRm7sEdOs0Jt4yd8F0gUM02";
+  const API = "https://smartbox-backend.onrender.com";
+
+  function getToken() {
+    try { return JSON.parse(localStorage.getItem("sb_token")); } catch { return null; }
+  }
+
+  function mostrarMsg(texto, tipo) {
+    const el = document.getElementById("plansMensagem");
+    el.textContent = texto;
+    el.className = tipo;
+    el.style.display = "block";
+  }
 
   // Verifica se já tem assinatura ativa ao carregar
   (async function verificarStatus() {
-    const token = (() => { try { return JSON.parse(localStorage.getItem("sb_token")); } catch { return null; } })();
+    const token = getToken();
 
-    // Feedback de retorno do checkout
     const params = new URLSearchParams(window.location.search);
     if (params.get("assinatura") === "ok") {
       mostrarMsg("✅ Assinatura ativada com sucesso! Bem-vindo ao TVXBOX.", "sucesso");
-    } else if (params.get("assinatura") === "cancelada") {
-      mostrarMsg("O pagamento foi cancelado. Você pode tentar novamente quando quiser.", "erro");
     }
 
     if (!token) return;
     try {
-      const r = await fetch("https://smartbox-backend.onrender.com/assinatura/status", {
+      const r = await fetch(`${API}/assinatura/status`, {
         headers: { "Authorization": "Bearer " + token }
       });
       if (!r.ok) return;
@@ -301,21 +379,113 @@
     } catch {}
   })();
 
-  function mostrarMsg(texto, tipo) {
-    const el = document.getElementById("plansMensagem");
-    el.textContent = texto;
-    el.className = tipo;
-    el.style.display = "block";
-  }
+  // ── Fluxo de assinatura via Pix (mesmo padrão do login.html) ────────────
+  (function() {
+    const overlay    = document.getElementById("pixModalOverlay");
+    const conteudo    = document.getElementById("pixConteudo");
+    const statusEl    = document.getElementById("pixStatus");
+    const btnAssinar  = document.getElementById("btnAssinar");
+    const btnFechar   = document.getElementById("pixFechar");
 
-  function iniciarCheckout() {
-    const token = (() => { try { return JSON.parse(localStorage.getItem("sb_token")); } catch { return null; } })();
-    if (!token) {
-      window.location.href = "login.html?redirect=planos.html";
-      return;
+    let pollTimer = null;
+
+    function pararPolling() {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     }
-    window.open(STRIPE_LINK, "_blank");
-  }
+
+    function fecharModal() {
+      pararPolling();
+      overlay.classList.remove("aberto");
+    }
+
+    async function iniciarAssinatura() {
+      const token = getToken();
+      if (!token) {
+        window.location.href = "login.html?redirect=planos.html";
+        return;
+      }
+
+      conteudo.innerHTML = "";
+      statusEl.className = "pix-status";
+      statusEl.innerHTML = `<span class="pix-spinner"></span> Gerando cobrança Pix...`;
+      overlay.classList.add("aberto");
+
+      try {
+        const r = await fetch(`${API}/assinatura/pix`, {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await r.json();
+
+        if (!r.ok) {
+          statusEl.className = "pix-status erro";
+          statusEl.textContent = data.mensagem || "Erro ao gerar Pix. Tente novamente.";
+          return;
+        }
+
+        conteudo.innerHTML = `
+          <div class="pix-qr-wrap">
+            <img src="data:image/png;base64,${data.qrCodeImg}" alt="QR Code Pix">
+          </div>
+          <div class="pix-copiar-row">
+            <input type="text" id="pixCopiaCola" value="${data.qrCode}" readonly>
+            <button type="button" id="pixBtnCopiar">Copiar</button>
+          </div>
+        `;
+
+        document.getElementById("pixBtnCopiar").addEventListener("click", () => {
+          const input = document.getElementById("pixCopiaCola");
+          navigator.clipboard?.writeText(data.qrCode)
+            .then(() => {
+              const btn = document.getElementById("pixBtnCopiar");
+              btn.textContent = "Copiado!";
+              setTimeout(() => { btn.textContent = "Copiar"; }, 2000);
+            })
+            .catch(() => { input.select(); document.execCommand("copy"); });
+        });
+
+        statusEl.className = "pix-status";
+        statusEl.innerHTML = `<span class="pix-spinner"></span> Aguardando pagamento...`;
+
+        pollTimer = setInterval(async () => {
+          try {
+            const rv = await fetch(`${API}/assinatura/verificar/${data.orderId}`, {
+              headers: { "Authorization": "Bearer " + token },
+            });
+            const dv = await rv.json();
+
+            if (dv.status === "processed" && dv.statusDetail === "accredited") {
+              pararPolling();
+              statusEl.className = "pix-status sucesso";
+              statusEl.textContent = "✅ Pagamento confirmado! Redirecionando...";
+              setTimeout(() => { window.location.href = "planos.html?assinatura=ok"; }, 1800);
+            } else if (dv.status === "canceled" || dv.status === "expired" || dv.status === "failed") {
+              pararPolling();
+              statusEl.className = "pix-status erro";
+              statusEl.textContent = "O Pix expirou ou falhou. Feche e tente novamente.";
+            }
+          } catch {}
+        }, 4000);
+
+      } catch {
+        statusEl.className = "pix-status erro";
+        statusEl.textContent = "Erro de conexão. Tente novamente.";
+      }
+    }
+
+    btnAssinar.addEventListener("click", iniciarAssinatura);
+    btnFechar.addEventListener("click", fecharModal);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) fecharModal(); });
+
+    // Se a pessoa chegou aqui recém-cadastrada (redirect automático do
+    // cadastro), abre o modal de Pix direto, sem precisar clicar de novo.
+    if (new URLSearchParams(window.location.search).get("auto") === "1") {
+      iniciarAssinatura();
+    }
+  })();
   </script>
 </body>
 </html>
