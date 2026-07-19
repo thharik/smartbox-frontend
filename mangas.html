@@ -147,6 +147,20 @@
     </div>
   </div>
 
+  <!-- Seletor de perfil leve — só aparece se ainda não tiver perfil escolhido -->
+  <div id="perfilPickerOverlay" style="
+    position:fixed; inset:0; z-index:600; background:rgba(0,0,0,.88);
+    display:none; align-items:center; justify-content:center; padding:20px;
+  ">
+    <div style="background:#141414; border:1.5px solid #2a2a2a; border-radius:16px; padding:28px 24px; max-width:360px; width:100%; text-align:center;">
+      <h3 style="color:#fff; font-size:18px; margin-bottom:16px;">Quem está assistindo?</h3>
+      <div id="perfilPickerLista" style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+        <p style="color:#888; font-size:13px;">Carregando perfis...</p>
+      </div>
+      <a href="index.html" style="color:#888; font-size:12px; text-decoration:underline;">Gerenciar perfis</a>
+    </div>
+  </div>
+
   <script src="pwa/register-sw.js"></script>
   <script>
     const BACKEND = "https://smartbox-backend.onrender.com";
@@ -160,6 +174,51 @@
 
     const token = getToken();
     if (!token) { window.location.href = "login.html"; }
+
+    // ── Garante que existe um perfil selecionado antes de fazer qualquer coisa ──
+    // O mangas.html não tinha essa checagem — dependia de a pessoa já ter
+    // passado pelo index.html antes e escolhido um perfil por lá. Se isso não
+    // tivesse acontecido nessa sessão (link direto, storage limpo, etc.), toda
+    // ação que precisa de perfil (favoritar, por exemplo) falhava sem dar
+    // nenhum jeito de resolver ali mesmo.
+    async function garantirPerfil() {
+      if (getPerfilId()) return true;
+
+      const overlay = document.getElementById("perfilPickerOverlay");
+      const lista   = document.getElementById("perfilPickerLista");
+      overlay.style.display = "flex";
+
+      try {
+        const r = await fetch(BACKEND + "/perfis", {
+          headers: { "Authorization": "Bearer " + token }
+        });
+        const perfis = await r.json();
+
+        if (!Array.isArray(perfis) || !perfis.length) {
+          // Sem nenhum perfil criado ainda — a criação de perfil vive no
+          // index.html, então manda pra lá em vez de duplicar essa tela aqui.
+          window.location.href = "index.html";
+          return false;
+        }
+
+        lista.innerHTML = "";
+        perfis.forEach(p => {
+          const btn = document.createElement("button");
+          btn.textContent = p.nome;
+          btn.style.cssText = "background:#222;border:1px solid #333;color:#fff;padding:12px;border-radius:8px;cursor:pointer;font-size:15px;";
+          btn.addEventListener("click", () => {
+            localStorage.setItem("sb_perfil_id",   JSON.stringify(p.id));
+            localStorage.setItem("sb_perfil_nome", JSON.stringify(p.nome));
+            overlay.style.display = "none";
+            iniciarPagina();
+          });
+          lista.appendChild(btn);
+        });
+      } catch {
+        lista.innerHTML = "<p style='color:#e50914;font-size:13px;'>Erro ao carregar perfis. Recarregue a página.</p>";
+      }
+      return false;
+    }
 
     // Header
     try {
@@ -361,10 +420,18 @@
     });
 
     // Init
-    (async () => {
+    async function iniciarPagina() {
       await carregarFavoritos();
       await carregarMangas();
+    }
+
+    (async () => {
+      const ok = await garantirPerfil();
+      if (ok) await iniciarPagina();
+      // Se não tinha perfil, garantirPerfil() já cuidou de mostrar o
+      // seletor (ou redirecionar) — iniciarPagina() roda depois que a
+      // pessoa escolher, disparado pelo próprio clique no perfil.
     })();
   </script>
 </body>
-</html> 
+</html>
