@@ -460,8 +460,8 @@
             if (dv.status === "processed" && dv.statusDetail === "accredited") {
               pararPolling();
               statusEl.className = "pix-status sucesso";
-              statusEl.textContent = "✅ Pagamento confirmado! Redirecionando...";
-              setTimeout(() => { window.location.href = "planos.html?assinatura=ok"; }, 1800);
+              statusEl.textContent = "✅ Pagamento confirmado! Redirecionando para o TVXBOX...";
+              setTimeout(() => { window.location.href = "index.html"; }, 1800);
             } else if (dv.status === "canceled" || dv.status === "expired" || dv.status === "failed") {
               pararPolling();
               statusEl.className = "pix-status erro";
