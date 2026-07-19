@@ -569,7 +569,9 @@ function renderContinuarAssistindo() {
 
   // Ordena: mais recente primeiro
   const lista = [...(userData.continuarAssistindo || [])].sort((a, b) => {
-    return (b.updated_at || b.ts || 0) > (a.updated_at || a.ts || 0) ? 1 : -1;
+    const tb = new Date(b.updated_at || b.ts || 0).getTime();
+    const ta = new Date(a.updated_at || a.ts || 0).getTime();
+    return tb - ta;
   });
   if (!lista.length) { box.classList.add("hidden"); return; }
 
@@ -1583,7 +1585,7 @@ function renderPlayer() {
       ep_titulo:    payload.ep_titulo,
       poster:       payload.poster,
       capa:         payload.capa,
-      updated_at:   Date.now(),
+      updated_at:   new Date().toISOString(),
     };
     if (idx >= 0) cache.splice(idx, 1);
     cache.unshift(entry);
