@@ -1,4 +1,4 @@
-const CACHE_NAME = "smartbox-v5";
+const CACHE_NAME = "smartbox-v6";
 const CACHE_STATIC = [
   "/",
   "/index.html",
@@ -10,6 +10,8 @@ const CACHE_STATIC = [
   "/assistir.html",
   "/detalhe.html",
   "/ao-vivo.html",
+  "/mangas.html",
+  "/planos.html",
   "/pwa/manifest.json",
 ];
 
@@ -50,12 +52,26 @@ self.addEventListener("fetch", (e) => {
               url.pathname.startsWith("/video") ||
               url.pathname.startsWith("/assinatura");
 
+  // Pedidos com Range (vídeo: início, seeks, trocas de qualidade) NUNCA
+  // passam pelo cache do Service Worker. A Cache API não diferencia qual
+  // trecho (Range) foi pedido — ela cacheia pela URL inteira, então dois
+  // pedidos de trechos diferentes do mesmo vídeo colidiriam no mesmo slot
+  // de cache, e o player acabaria recebendo o pedaço errado do arquivo.
+  // O Cloudflare Worker já cuida do cache de vídeo do jeito certo (por
+  // trecho); aqui é só deixar passar direto pra rede.
+  if (e.request.headers.has("range")) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
   if (isAPI) {
-    // Network-first: tenta servidor, cai no cache se offline
+    // Network-first, sempre ignorando o cache HTTP do navegador — sem
+    // isso, o navegador às vezes devolve um 304 (sem corpo) pra uma
+    // requisição condicional, e o .json() no código da página quebra em
+    // cima de uma resposta vazia.
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, { cache: "no-store" })
         .then((res) => {
-          // Cacheia resposta do catálogo para uso offline
           if (url.pathname === "/catalogo" && res.ok) {
             const clone = res.clone();
             caches.open(CACHE_NAME).then((c) => c.put(e.request, clone));
