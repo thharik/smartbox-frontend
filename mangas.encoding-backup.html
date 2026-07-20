@@ -1,16 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mangás - Tvxbox</title>
+  <title>MangÃ¡s - Tvxbox</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="pwa/manifest.json">
   <meta name="theme-color" content="#141414">
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
   <link rel="apple-touch-icon" href="/pwa/icon-192.png">
   <style>
-    /* ── Leitor de mangá ── */
+    /* â”€â”€ Leitor de mangÃ¡ â”€â”€ */
     .manga-reader-overlay {
       position: fixed; inset: 0; background: #0a0a0a;
       z-index: 500; display: none; flex-direction: column;
@@ -36,7 +36,7 @@
       border: none; background: #fff;
     }
 
-    /* ── Cards de mangá ── */
+    /* â”€â”€ Cards de mangÃ¡ â”€â”€ */
     .manga-card {
       position: relative; min-width: 200px; max-width: 200px;
       background: #1b1b1b; border-radius: 14px; overflow: hidden;
@@ -58,7 +58,7 @@
     }
     .manga-fav-btn.ativo { background: #e50914; }
 
-    /* ── Painel de volumes ── */
+    /* â”€â”€ Painel de volumes â”€â”€ */
     .volumes-panel {
       background: #1a1a1a; border-radius: 16px; padding: 24px;
       margin-top: 8px; border: 1px solid #2a2a2a;
@@ -87,7 +87,7 @@
     }
     .btn-ler:hover { opacity: .9; }
 
-    /* ── Mobile ── */
+    /* â”€â”€ Mobile â”€â”€ */
     @media (max-width: 600px) {
       .manga-card { min-width: 140px; max-width: 140px; }
       .manga-card img { height: 200px; }
@@ -98,11 +98,11 @@
 <body>
   <header class="topbar">
     <a href="index.html" class="logo">TVXBOX</a>
-    <button class="menu-toggle" id="menuToggle" aria-label="Menu" aria-expanded="false">☰</button>
+    <button class="menu-toggle" id="menuToggle" aria-label="Menu" aria-expanded="false">â˜°</button>
     <nav class="main-nav" id="mainNav">
-      <a href="index.html">Início</a>
+      <a href="index.html">InÃ­cio</a>
       <a href="ao-vivo.html">Ao Vivo</a>
-      <a href="mangas.html">Mangás</a>
+      <a href="mangas.html">MangÃ¡s</a>
       <a href="aulas.html">Aulas</a>
     </nav>
     <div class="header-right">
@@ -114,15 +114,15 @@
   </header>
 
   <main class="container">
-    <h1 class="section-title" style="margin-bottom:24px">Mangás</h1>
+    <h1 class="section-title" style="margin-bottom:24px">MangÃ¡s</h1>
 
-    <!-- Grid de mangás -->
+    <!-- Grid de mangÃ¡s -->
     <div id="rowMangas" class="poster-row"></div>
 
-    <!-- Painel de volumes — aparece ao clicar num mangá -->
+    <!-- Painel de volumes â€” aparece ao clicar num mangÃ¡ -->
     <section id="volumesPanel" class="volumes-panel hidden">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-        <button id="btnVoltarMangas" style="background:#222;border:1px solid #333;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;flex-shrink:0;">← Voltar</button>
+        <button id="btnVoltarMangas" style="background:#222;border:1px solid #333;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;flex-shrink:0;">â† Voltar</button>
         <h2 id="mangaTitulo" style="font-size:20px;margin:0"></h2>
         <button id="btnFavManga" style="margin-left:auto;background:#2a2a2a;border:1px solid #444;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;flex-shrink:0;">+ Minha lista</button>
       </div>
@@ -132,7 +132,7 @@
         <select id="volumeSelect"></select>
       </div>
 
-      <button class="btn-ler" id="btnLerVolume">📖 Ler volume</button>
+      <button class="btn-ler" id="btnLerVolume">ðŸ“– Ler volume</button>
     </section>
   </main>
 
@@ -140,20 +140,20 @@
   <div class="manga-reader-overlay" id="mangaReaderOverlay">
     <div class="manga-reader-topbar">
       <h2 id="readerTitulo">Lendo...</h2>
-      <button id="btnReaderFechar" class="btn-fechar">✕ Fechar</button>
+      <button id="btnReaderFechar" class="btn-fechar">âœ• Fechar</button>
     </div>
     <div class="manga-reader-body">
-      <iframe id="readerFrame" title="Leitor de mangá" allowfullscreen></iframe>
+      <iframe id="readerFrame" title="Leitor de mangÃ¡" allowfullscreen></iframe>
     </div>
   </div>
 
-  <!-- Seletor de perfil leve — só aparece se ainda não tiver perfil escolhido -->
+  <!-- Seletor de perfil leve â€” sÃ³ aparece se ainda nÃ£o tiver perfil escolhido -->
   <div id="perfilPickerOverlay" style="
     position:fixed; inset:0; z-index:600; background:rgba(0,0,0,.88);
     display:none; align-items:center; justify-content:center; padding:20px;
   ">
     <div style="background:#141414; border:1.5px solid #2a2a2a; border-radius:16px; padding:28px 24px; max-width:360px; width:100%; text-align:center;">
-      <h3 style="color:#fff; font-size:18px; margin-bottom:16px;">Quem está assistindo?</h3>
+      <h3 style="color:#fff; font-size:18px; margin-bottom:16px;">Quem estÃ¡ assistindo?</h3>
       <div id="perfilPickerLista" style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
         <p style="color:#888; font-size:13px;">Carregando perfis...</p>
       </div>
@@ -175,11 +175,11 @@
     const token = getToken();
     if (!token) { window.location.href = "login.html"; }
 
-    // ── Garante que existe um perfil selecionado antes de fazer qualquer coisa ──
-    // O mangas.html não tinha essa checagem — dependia de a pessoa já ter
-    // passado pelo index.html antes e escolhido um perfil por lá. Se isso não
-    // tivesse acontecido nessa sessão (link direto, storage limpo, etc.), toda
-    // ação que precisa de perfil (favoritar, por exemplo) falhava sem dar
+    // â”€â”€ Garante que existe um perfil selecionado antes de fazer qualquer coisa â”€â”€
+    // O mangas.html nÃ£o tinha essa checagem â€” dependia de a pessoa jÃ¡ ter
+    // passado pelo index.html antes e escolhido um perfil por lÃ¡. Se isso nÃ£o
+    // tivesse acontecido nessa sessÃ£o (link direto, storage limpo, etc.), toda
+    // aÃ§Ã£o que precisa de perfil (favoritar, por exemplo) falhava sem dar
     // nenhum jeito de resolver ali mesmo.
     async function garantirPerfil() {
       if (getPerfilId()) return true;
@@ -195,8 +195,8 @@
         const perfis = await r.json();
 
         if (!Array.isArray(perfis) || !perfis.length) {
-          // Sem nenhum perfil criado ainda — a criação de perfil vive no
-          // index.html, então manda pra lá em vez de duplicar essa tela aqui.
+          // Sem nenhum perfil criado ainda â€” a criaÃ§Ã£o de perfil vive no
+          // index.html, entÃ£o manda pra lÃ¡ em vez de duplicar essa tela aqui.
           window.location.href = "index.html";
           return false;
         }
@@ -215,7 +215,7 @@
           lista.appendChild(btn);
         });
       } catch {
-        lista.innerHTML = "<p style='color:#e50914;font-size:13px;'>Erro ao carregar perfis. Recarregue a página.</p>";
+        lista.innerHTML = "<p style='color:#e50914;font-size:13px;'>Erro ao carregar perfis. Recarregue a pÃ¡gina.</p>";
       }
       return false;
     }
@@ -278,7 +278,7 @@
       } catch {}
     }
 
-    // Carregar mangás
+    // Carregar mangÃ¡s
     async function carregarMangas() {
       const row = document.getElementById("rowMangas");
       row.innerHTML = "<p style='color:#aaa'>Carregando...</p>";
@@ -292,7 +292,7 @@
 
         row.innerHTML = "";
         if (!mangas.length) {
-          row.innerHTML = "<p style='color:#aaa'>Nenhum mangá disponível.</p>";
+          row.innerHTML = "<p style='color:#aaa'>Nenhum mangÃ¡ disponÃ­vel.</p>";
           return;
         }
 
@@ -303,16 +303,16 @@
           const fav = ehFavorito(manga.id);
           card.innerHTML =
             '<img src="' + (manga.poster || '') + '" alt="' + manga.titulo + '" loading="lazy">' +
-            '<div class="info"><h3>' + manga.titulo + '</h3><p>' + (manga.generos?.[0] || "Mangá") + '</p></div>' +
-            '<button class="manga-fav-btn' + (fav ? ' ativo' : '') + '" title="Favorito">' + (fav ? '✓' : '+') + '</button>';
+            '<div class="info"><h3>' + manga.titulo + '</h3><p>' + (manga.generos?.[0] || "MangÃ¡") + '</p></div>' +
+            '<button class="manga-fav-btn' + (fav ? ' ativo' : '') + '" title="Favorito">' + (fav ? 'âœ“' : '+') + '</button>';
 
-          // Botão favorito
+          // BotÃ£o favorito
           card.querySelector(".manga-fav-btn").addEventListener("click", async (e) => {
             e.stopPropagation();
             await alternarFavorito(manga.id);
             const btn = card.querySelector(".manga-fav-btn");
             const ativo = ehFavorito(manga.id);
-            btn.textContent = ativo ? "✓" : "+";
+            btn.textContent = ativo ? "âœ“" : "+";
             btn.classList.toggle("ativo", ativo);
           });
 
@@ -321,7 +321,7 @@
           row.appendChild(card);
         });
       } catch (err) {
-        row.innerHTML = "<p style='color:#e50914'>Erro ao carregar mangás.</p>";
+        row.innerHTML = "<p style='color:#e50914'>Erro ao carregar mangÃ¡s.</p>";
       }
     }
 
@@ -339,7 +339,7 @@
       panel.classList.remove("hidden");
       window.scrollTo({ top: panel.offsetTop - 80, behavior: "smooth" });
 
-      // Atualiza botão favorito
+      // Atualiza botÃ£o favorito
       atualizarBtnFavManga(manga.id);
 
       // Busca volumes
@@ -353,14 +353,14 @@
         select.disabled = false;
 
         if (!vols.length) {
-          select.innerHTML = "<option>Nenhum volume disponível</option>";
+          select.innerHTML = "<option>Nenhum volume disponÃ­vel</option>";
           return;
         }
 
         vols.forEach(vol => {
           const opt = document.createElement("option");
           opt.value = vol.id;
-          opt.textContent = "Volume " + vol.numero + (vol.titulo ? " — " + vol.titulo : "");
+          opt.textContent = "Volume " + vol.numero + (vol.titulo ? " â€” " + vol.titulo : "");
           select.appendChild(opt);
         });
       } catch {
@@ -371,7 +371,7 @@
     function atualizarBtnFavManga(id) {
       const btn = document.getElementById("btnFavManga");
       const fav = ehFavorito(id);
-      btn.textContent = fav ? "✓ Na minha lista" : "+ Minha lista";
+      btn.textContent = fav ? "âœ“ Na minha lista" : "+ Minha lista";
       btn.style.background = fav ? "#e50914" : "#2a2a2a";
       btn.style.borderColor = fav ? "#e50914" : "#444";
     }
@@ -403,7 +403,7 @@
       const overlay = document.getElementById("mangaReaderOverlay");
       const frame = document.getElementById("readerFrame");
       const titulo = document.getElementById("readerTitulo");
-      titulo.textContent = (mangaAtual?.titulo || "") + " — Volume " + vol.numero;
+      titulo.textContent = (mangaAtual?.titulo || "") + " â€” Volume " + vol.numero;
       frame.src = vol.pdf_url;
       overlay.classList.add("ativo");
       document.body.style.overflow = "hidden";
@@ -428,9 +428,9 @@
     (async () => {
       const ok = await garantirPerfil();
       if (ok) await iniciarPagina();
-      // Se não tinha perfil, garantirPerfil() já cuidou de mostrar o
-      // seletor (ou redirecionar) — iniciarPagina() roda depois que a
-      // pessoa escolher, disparado pelo próprio clique no perfil.
+      // Se nÃ£o tinha perfil, garantirPerfil() jÃ¡ cuidou de mostrar o
+      // seletor (ou redirecionar) â€” iniciarPagina() roda depois que a
+      // pessoa escolher, disparado pelo prÃ³prio clique no perfil.
     })();
   </script>
 </body>
