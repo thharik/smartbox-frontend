@@ -8,7 +8,7 @@ const ls = {
 const API = "https://smartbox-backend.onrender.com";
 
 function getToken()    { return ls.get("sb_token"); }
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function getPerfilId() {
   const v = ls.get("sb_perfil_id");
   // Um valor velho/malformado (de sessões de antes dos consertos) passava
