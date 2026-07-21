@@ -8,7 +8,16 @@ const ls = {
 const API = "https://smartbox-backend.onrender.com";
 
 function getToken()    { return ls.get("sb_token"); }
-function getPerfilId() { return ls.get("sb_perfil_id"); }
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+function getPerfilId() {
+  const v = ls.get("sb_perfil_id");
+  // Um valor velho/malformado (de sessões de antes dos consertos) passava
+  // solto por aqui achando que era válido, mesmo não sendo. Validando o
+  // formato de UUID de verdade, qualquer lixo salvo é tratado como "sem
+  // perfil" e força buscar um novo, em vez de tentar usar algo quebrado.
+  if (!v || !UUID_RE.test(String(v))) return null;
+  return v;
+}
 
 function headers(comPerfil = false) {
   const h = { "Content-Type": "application/json", "Authorization": `Bearer ${getToken()}` };
@@ -218,51 +227,16 @@ async function carregarUserData() {
 // ─── Múltiplos perfis ─────────────────────────────────────────────────────────
 function mostrarTelaPerfis() {
   return new Promise(async (resolve) => {
+    // Removido o conceito de múltiplos perfis / tela "Quem está assistindo?".
+    // Cada conta usa um único perfil por trás dos panos (o banco garante
+    // que sempre existe pelo menos um) — aqui só pegamos ele silenciosamente
+    // e seguimos, sem mostrar nada pro usuário.
     const perfis = await apiFetch("/perfis", { headers: headers() });
-    if (!perfis || !Array.isArray(perfis) || !perfis.length) { resolve(); return; }
-
-    // 1 perfil sem PIN: seleciona direto e resolve imediatamente
-    if (perfis.length === 1 && !perfis[0].tem_pin) {
+    if (perfis && Array.isArray(perfis) && perfis.length) {
       selecionarPerfil(perfis[0]);
-      resolve();
-      return;
     }
-
-    const overlay = document.createElement("div");
-    overlay.id = "perfilOverlay";
-    overlay.style.cssText = "position:fixed;inset:0;background:#111;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;";
-  overlay.innerHTML = `
-    <h1 style="font-size:28px;color:#fff;font-weight:500">Quem está assistindo?</h1>
-    <div id="perfilGrid" style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center"></div>
-    <button id="btnGerenciarPerfis" style="background:transparent;border:1px solid #555;color:#aaa;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;">Gerenciar perfis</button>
-  `;
-  const grid = overlay.querySelector("#perfilGrid");
-  perfis.forEach(p => {
-    const btn = document.createElement("button");
-    btn.style.cssText = "background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;";
-    btn.innerHTML = `
-      <div style="width:90px;height:90px;border-radius:10px;background:#222;font-size:36px;display:flex;align-items:center;justify-content:center;border:2px solid transparent;transition:border-color .2s;" class="perfil-avatar">${p.avatar.length === 1 || p.avatar.startsWith("avat") ? "🎬" : p.avatar}</div>
-      <span style="color:#ccc;font-size:14px">${p.nome}</span>
-      ${p.tem_pin ? '<span style="color:#777;font-size:12px">🔒 PIN</span>' : ""}
-    `;
-    btn.addEventListener("mouseenter", () => btn.querySelector(".perfil-avatar").style.borderColor = "#e50914");
-    btn.addEventListener("mouseleave", () => btn.querySelector(".perfil-avatar").style.borderColor = "transparent");
-    btn.addEventListener("click", () => {
-      if (p.tem_pin) pedirPin(p, overlay, resolve);
-      else { selecionarPerfil(p); overlay.remove(); resolve(); }
-    });
-    grid.appendChild(btn);
+    resolve();
   });
-  if (perfis.length < 4) {
-    const btnNovo = document.createElement("button");
-    btnNovo.style.cssText = "background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;";
-    btnNovo.innerHTML = `<div style="width:90px;height:90px;border-radius:10px;background:#1a1a1a;border:2px dashed #333;font-size:36px;display:flex;align-items:center;justify-content:center;color:#555;">+</div><span style="color:#777;font-size:14px">Novo perfil</span>`;
-    btnNovo.addEventListener("click", () => abrirModalCriarPerfil(overlay));
-    grid.appendChild(btnNovo);
-  }
-  overlay.querySelector("#btnGerenciarPerfis").addEventListener("click", () => abrirModalCriarPerfil(overlay, resolve));
-  document.body.appendChild(overlay);
-  })
 }
 
 function pedirPin(perfil, overlay, resolve) {
@@ -1894,7 +1868,7 @@ function iniciarMenuMobile() {
 function configurarUsuario() {
   const nome    = document.getElementById("usuarioNome");
   const btnSair = document.getElementById("btnSair");
-  if (nome)    nome.textContent = ls.get("sb_perfil_nome") || localStorage.getItem("usuarioEmail") || "";
+  if (nome)    nome.textContent = localStorage.getItem("usuarioEmail") || "";
   if (btnSair) btnSair.addEventListener("click", logout);
 }
 
