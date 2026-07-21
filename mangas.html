@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -115,6 +115,12 @@
 
   <main class="container">
     <h1 class="section-title" style="margin-bottom:24px">Mangás</h1>
+
+    <!-- Minha lista — favoritos de mangá, mesmo padrão do index.html -->
+    <section id="favoritosMangaBox" class="hidden" style="margin-bottom:32px">
+      <div class="section-header"><h2>Minha lista</h2></div>
+      <div id="favoritosMangaRow" class="poster-row"></div>
+    </section>
 
     <!-- Grid de mangás -->
     <div id="rowMangas" class="poster-row"></div>
@@ -241,6 +247,40 @@
     let mangaAtual = null;
     let volumesAtual = [];
     let favoritosManga = [];
+    let todosMangasCache = []; // guarda a lista completa pra montar a seção "Minha lista"
+
+    // Renderiza (ou esconde) a seção "Minha lista" — mesmo padrão do index.html
+    function renderFavoritosManga() {
+      const box = document.getElementById("favoritosMangaBox");
+      const row = document.getElementById("favoritosMangaRow");
+      if (!box || !row) return;
+
+      const itens = todosMangasCache.filter(m => favoritosManga.includes(m.id));
+      row.innerHTML = "";
+
+      if (!itens.length) { box.classList.add("hidden"); return; }
+      box.classList.remove("hidden");
+
+      itens.forEach(manga => {
+        const card = document.createElement("div");
+        card.className = "manga-card";
+        card.innerHTML =
+          '<img src="' + (manga.poster || '') + '" alt="' + manga.titulo + '" loading="lazy">' +
+          '<div class="info"><h3>' + manga.titulo + '</h3><p>' + (manga.generos?.[0] || "Mangá") + '</p></div>' +
+          '<button class="manga-fav-btn ativo" title="Remover da lista">✓</button>';
+
+        card.querySelector(".manga-fav-btn").addEventListener("click", async (e) => {
+          e.stopPropagation();
+          await alternarFavorito(manga.id);
+          renderFavoritosManga();
+          // Mantém o card principal (fora da lista de favoritos) sincronizado também
+          carregarMangas();
+        });
+
+        card.addEventListener("click", () => abrirVolumes(manga));
+        row.appendChild(card);
+      });
+    }
 
     // Carregar favoritos
     async function carregarFavoritos() {
@@ -289,10 +329,12 @@
         });
         const data = await r.json();
         const mangas = data.mangas || [];
+        todosMangasCache = mangas; // guarda pra montar a seção "Minha lista"
 
         row.innerHTML = "";
         if (!mangas.length) {
           row.innerHTML = "<p style='color:#aaa'>Nenhum mangá disponível.</p>";
+          renderFavoritosManga();
           return;
         }
 
@@ -314,12 +356,15 @@
             const ativo = ehFavorito(manga.id);
             btn.textContent = ativo ? "✓" : "+";
             btn.classList.toggle("ativo", ativo);
+            renderFavoritosManga();
           });
 
           // Abrir painel de volumes
           card.addEventListener("click", () => abrirVolumes(manga));
           row.appendChild(card);
         });
+
+        renderFavoritosManga();
       } catch (err) {
         row.innerHTML = "<p style='color:#e50914'>Erro ao carregar mangás.</p>";
       }
@@ -380,6 +425,7 @@
       if (!mangaAtual) return;
       await alternarFavorito(mangaAtual.id);
       atualizarBtnFavManga(mangaAtual.id);
+      renderFavoritosManga();
     });
 
     // Ler volume selecionado
@@ -435,4 +481,3 @@
   </script>
 </body>
 </html>
-
