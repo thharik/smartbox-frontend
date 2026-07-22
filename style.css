@@ -51,6 +51,15 @@ img, video {
   z-index: 30;
 }
 
+/* Trava cada item na coluna certa explicitamente — sem isso, o
+   .menu-toggle (display:none no desktop) some do grid e empurra todo
+   mundo depois dele uma coluna pra trás, fazendo o header-right cair
+   na coluna 1fr (a do menu) em vez da última (auto). */
+.logo         { grid-column: 1; }
+.menu-toggle  { grid-column: 2; }
+.main-nav     { grid-column: 3; }
+.header-right { grid-column: 4; }
+
 /* Logo agora é uma tag <a> — mantém aparência igual */
 .logo {
   font-size: 28px;
@@ -298,6 +307,7 @@ img, video {
     padding: 14px 16px;
   }
   .menu-toggle { display: block; }
+  .header-right { grid-column: 3; } /* só 3 colunas no mobile (main-nav sai do grid) */
 
   .main-nav {
     display: none;

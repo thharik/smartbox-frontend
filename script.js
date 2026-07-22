@@ -5,15 +5,13 @@ const ls = {
   del: k => localStorage.removeItem(k),
 };
 
-// ─── CSS injetado: avatar do perfil + layout do cabeçalho ──────────────────
-// O nome do perfil + botão Sair estavam grudados nos links de navegação
-// (Mangás, Ao Vivo) — isso força os dois a ficarem isolados no canto
-// superior direito, independente do que já existir no style.css.
-(function injetarEstiloHeader() {
+// ─── CSS injetado: avatar do perfil ────────────────────────────────────────
+// O layout do cabeçalho (nome + Sair isolados à direita) já foi corrigido
+// direto no style.css (bug de grid-column) — aqui só falta o estilo do
+// quadradinho colorido do avatar, que ainda não existe no style.css.
+(function injetarEstiloAvatar() {
   const style = document.createElement("style");
   style.textContent = `
-    .topbar { position: relative !important; }
-    .header-right { margin-left: auto !important; }
     #usuarioNome {
       display: inline-flex !important;
       align-items: center;
@@ -21,6 +19,7 @@ const ls = {
       padding: 6px 10px;
       border-radius: 8px;
       transition: background .15s;
+      cursor: pointer;
     }
     #usuarioNome:hover { background: rgba(255,255,255,.06); }
     .perfil-avatar-dot {
@@ -30,14 +29,6 @@ const ls = {
       display: inline-block;
     }
     .perfil-nome-txt { font-size: 14px; color: #ddd; }
-
-    @media (max-width: 900px) {
-      .user-box {
-        position: absolute !important;
-        top: 14px; right: 16px;
-        display: flex; align-items: center; gap: 10px;
-      }
-    }
   `;
   document.head.appendChild(style);
 })();
