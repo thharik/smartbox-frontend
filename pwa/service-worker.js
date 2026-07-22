@@ -1,4 +1,4 @@
-const CACHE_NAME = "smartbox-v7";
+const CACHE_NAME = "smartbox-v8";
 
 const CACHE_STATIC = [
   "/",
@@ -61,6 +61,14 @@ self.addEventListener("fetch", (e) => {
 
   const url = new URL(e.request.url);
 
+  // O Cloudflare Worker (vídeos, posters, capas) já cuida do próprio cache
+  // do jeito certo, por trecho de arquivo. O Service Worker aqui não tem
+  // nada a acrescentar nesse tráfego — só atrapalha, mascarando erros reais
+  // com uma resposta genérica de fallback. Deixa passar direto pra rede.
+  if (url.hostname.endsWith("workers.dev")) {
+    return; // não chama e.respondWith() — o navegador cuida sozinho
+  }
+
   const isAPI =
     url.pathname.startsWith("/auth") ||
     url.pathname.startsWith("/catalogo") ||
@@ -70,7 +78,8 @@ self.addEventListener("fetch", (e) => {
     url.pathname.startsWith("/video") ||
     url.pathname.startsWith("/assinatura");
 
-  // Nunca cacheia requisições Range (vídeos)
+  // Nunca cacheia requisições Range (vídeos servidos pelo próprio backend,
+  // caso ainda existam — hoje a maioria já foi migrada pro Worker acima)
   if (e.request.headers.has("range")) {
     e.respondWith(fetch(e.request));
     return;

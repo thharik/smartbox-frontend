@@ -5,6 +5,43 @@ const ls = {
   del: k => localStorage.removeItem(k),
 };
 
+// ─── CSS injetado: avatar do perfil + layout do cabeçalho ──────────────────
+// O nome do perfil + botão Sair estavam grudados nos links de navegação
+// (Mangás, Ao Vivo) — isso força os dois a ficarem isolados no canto
+// superior direito, independente do que já existir no style.css.
+(function injetarEstiloHeader() {
+  const style = document.createElement("style");
+  style.textContent = `
+    .topbar { position: relative !important; }
+    .header-right { margin-left: auto !important; }
+    #usuarioNome {
+      display: inline-flex !important;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      transition: background .15s;
+    }
+    #usuarioNome:hover { background: rgba(255,255,255,.06); }
+    .perfil-avatar-dot {
+      width: 18px; height: 18px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+    .perfil-nome-txt { font-size: 14px; color: #ddd; }
+
+    @media (max-width: 900px) {
+      .user-box {
+        position: absolute !important;
+        top: 14px; right: 16px;
+        display: flex; align-items: center; gap: 10px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
 const API = "https://smartbox-backend.onrender.com";
 
 function getToken()    { return ls.get("sb_token"); }
@@ -293,8 +330,9 @@ function abrirModalCriarPerfil(overlay, resolve) {
 }
 
 function selecionarPerfil(perfil) {
-  ls.set("sb_perfil_id",   perfil.id);
-  ls.set("sb_perfil_nome", perfil.nome);
+  ls.set("sb_perfil_id",     perfil.id);
+  ls.set("sb_perfil_nome",   perfil.nome);
+  ls.set("sb_perfil_avatar", perfil.avatar || "e50914");
 }
 
 // ─── Preview hover nos cards ──────────────────────────────────────────────────
@@ -1868,8 +1906,82 @@ function iniciarMenuMobile() {
 function configurarUsuario() {
   const nome    = document.getElementById("usuarioNome");
   const btnSair = document.getElementById("btnSair");
-  if (nome)    nome.textContent = localStorage.getItem("usuarioEmail") || "";
+
+  if (nome) {
+    const nomePerfil = ls.get("sb_perfil_nome") || "";
+    const cor        = ls.get("sb_perfil_avatar") || "e50914";
+    nome.innerHTML = `
+      <span class="perfil-avatar-dot" style="background:#${cor}"></span>
+      <span class="perfil-nome-txt">${nomePerfil}</span>
+    `;
+    nome.style.cursor = "pointer";
+    nome.title = "Editar perfil";
+    nome.addEventListener("click", abrirEditorPerfil);
+  }
   if (btnSair) btnSair.addEventListener("click", logout);
+}
+
+// ─── Editor de perfil (nome + cor do avatar) ───────────────────────────────
+const CORES_AVATAR = ["e50914", "1f77e5", "22a35d", "b8860b", "8e44ad", "e67e22", "16a085", "555555"];
+
+async function abrirEditorPerfil() {
+  const perfilId    = getPerfilId();
+  const nomeAtual    = ls.get("sb_perfil_nome") || "";
+  const corAtual     = ls.get("sb_perfil_avatar") || "e50914";
+  if (!perfilId) return;
+
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;";
+  overlay.innerHTML = `
+    <div style="background:#141414;border:1.5px solid #2a2a2a;border-radius:16px;padding:28px 24px;max-width:340px;width:100%;">
+      <h3 style="color:#fff;font-size:18px;margin-bottom:18px;">Editar perfil</h3>
+      <label style="display:block;color:#aaa;font-size:13px;margin-bottom:6px;">Nome</label>
+      <input id="editPerfilNome" type="text" maxlength="20" value="${nomeAtual}" style="width:100%;padding:12px;border-radius:8px;background:#222;border:1px solid #444;color:#fff;font-size:15px;margin-bottom:18px;box-sizing:border-box;">
+      <label style="display:block;color:#aaa;font-size:13px;margin-bottom:8px;">Cor do perfil</label>
+      <div id="editPerfilCores" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button id="editPerfilCancelar" style="flex:1;padding:12px;border-radius:8px;background:#2a2a2a;border:1px solid #444;color:#ddd;cursor:pointer;font-size:14px;">Cancelar</button>
+        <button id="editPerfilSalvar" style="flex:1;padding:12px;border-radius:8px;background:#e50914;border:none;color:#fff;cursor:pointer;font-size:14px;font-weight:700;">Salvar</button>
+      </div>
+      <p id="editPerfilMsg" style="color:#f87171;font-size:12px;margin-top:12px;min-height:16px;"></p>
+    </div>
+  `;
+
+  let corSelecionada = corAtual;
+  const coresBox = overlay.querySelector("#editPerfilCores");
+  CORES_AVATAR.forEach(cor => {
+    const sw = document.createElement("button");
+    sw.type = "button";
+    sw.style.cssText = `width:36px;height:36px;border-radius:8px;background:#${cor};cursor:pointer;border:3px solid ${cor === corAtual ? "#fff" : "transparent"};`;
+    sw.addEventListener("click", () => {
+      corSelecionada = cor;
+      coresBox.querySelectorAll("button").forEach(b => b.style.borderColor = "transparent");
+      sw.style.borderColor = "#fff";
+    });
+    coresBox.appendChild(sw);
+  });
+
+  overlay.querySelector("#editPerfilCancelar").addEventListener("click", () => overlay.remove());
+  overlay.querySelector("#editPerfilSalvar").addEventListener("click", async () => {
+    const novoNome = overlay.querySelector("#editPerfilNome").value.trim();
+    const msg = overlay.querySelector("#editPerfilMsg");
+    if (!novoNome) { msg.textContent = "O nome não pode ficar vazio."; return; }
+
+    const resultado = await apiFetch(`/perfis/${perfilId}`, {
+      method: "PUT",
+      headers: headers(),
+      body: JSON.stringify({ nome: novoNome, avatar: corSelecionada }),
+    });
+
+    if (!resultado) { msg.textContent = "Erro ao salvar. Tente novamente."; return; }
+
+    ls.set("sb_perfil_nome",   novoNome);
+    ls.set("sb_perfil_avatar", corSelecionada);
+    overlay.remove();
+    configurarUsuario();
+  });
+
+  document.body.appendChild(overlay);
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
