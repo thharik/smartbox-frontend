@@ -1110,6 +1110,14 @@ function instalarIndicadorBuffering(videoEl) {
   videoEl.addEventListener("stalled",  () => mostrar("Aguardando rede..."));
   videoEl.addEventListener("error",    () => { mostrar("Reconectando..."); reconectando = true; });
 
+  // Em streams HLS ao vivo, "stalled" às vezes dispara só como aviso do
+  // HLS.js, sem o vídeo realmente pausar — e como ele nunca "pausou de
+  // verdade", o "playing" não dispara de novo pra esconder o aviso, que
+  // fica preso na tela pra sempre. "timeupdate" só dispara quando o vídeo
+  // está avançando de verdade, então é a prova mais confiável de que está
+  // tocando — funciona como uma rede de segurança extra.
+  videoEl.addEventListener("timeupdate", esconder);
+
   // Detecta quando a internet volta
   window.addEventListener("online", () => {
     if (reconectando) mostrar("Rede restaurada, retomando...");
