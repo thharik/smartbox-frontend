@@ -150,22 +150,64 @@ const CANAIS_BUILTIN = [
   { id:"ebs1-kr", titulo:"EBS 1 (Coreia)", tipo:"AoVivo", categoria:"Variedades", poster:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/EBS_1TV_Logo.svg/512px-EBS_1TV_Logo.svg.png", video:"https://ebsonair.ebs.co.kr/ebs1familypc/familypc1m/playlist.m3u8" },
   { id:"ebs2-kr", titulo:"EBS 2 (Coreia)", tipo:"AoVivo", categoria:"Variedades", poster:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/EBS_2TV_Logo.svg/512px-EBS_2TV_Logo.svg.png", video:"https://ebsonair.ebs.co.kr/ebs2familypc/familypc1m/playlist.m3u8" },
 
-  // ── TV JAPONESA ────────────────────────────────────────────────────────────
-  { id:"ntv", titulo:"NTV", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Nippon_TV_logo_2014.svg/2560px-Nippon_TV_logo_2014.svg.png", video:"https://mt01.utako.moe/Nippon_TV/index.m3u8" },
-  { id:"tbs-japan", titulo:"TBS Japan", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Tokyo_Broadcasting_System_logo_2020.svg/2560px-Tokyo_Broadcasting_System_logo_2020.svg.png", video:"https://mt01.utako.moe/TBS/index.m3u8" },
-  { id:"fuji-tv", titulo:"Fuji TV", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/fr/thumb/6/65/Fuji_TV_Logo.svg/1049px-Fuji_TV_Logo.svg.png", video:"https://mt01.utako.moe/Fuji_TV/index.m3u8" },
-  { id:"tv-asahi", titulo:"TV Asahi", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/TV_Asahi_Logo.svg/2560px-TV_Asahi_Logo.svg.png", video:"https://mt01.utako.moe/TV_Asahi/index.m3u8" },
-  { id:"tv-tokyo", titulo:"TV Tokyo", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/TV_Tokyo_logo_2023.svg/2560px-TV_Tokyo_logo_2023.svg.png", video:"https://mt01.utako.moe/TV_Tokyo/index.m3u8" },
-  { id:"tokyo-mx1", titulo:"TOKYO MX1", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Tokyo_metropolitan_television_logo_%28rainbow%29.svg/2560px-Tokyo_metropolitan_television_logo_%28rainbow%29.svg.png", video:"https://mt01.utako.moe/Tokyo_MX1/index.m3u8" },
-  { id:"mbs", titulo:"MBS", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Mainichi_Broadcasting_System_logo.svg/1920px-Mainichi_Broadcasting_System_logo.svg.png", video:"https://mt01.utako.moe/mbs/index.m3u8" },
-  { id:"abc-japan", titulo:"ABC Japan", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Asahi_Broadcasting_Corporation_Logo.svg/261px-Asahi_Broadcasting_Corporation_Logo.svg.png", video:"https://mt01.utako.moe/abc/index.m3u8" },
-  { id:"tv-osaka", titulo:"TV Osaka", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Tv_osaka_logo.svg/178px-Tv_osaka_logo.svg.png", video:"https://mt01.utako.moe/tvo/index.m3u8" },
-  { id:"nhk-bs", titulo:"NHK BS", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/commons/6/6c/NHK_BS.png", video:"https://mt01.utako.moe/NHK_BS/index.m3u8" },
-  
-  { id:"at-x", titulo:"AT-X", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/AT-X_logo.svg/2560px-AT-X_logo.svg.png", video:"https://mt01.utako.moe/AT-X/index.m3u8" },
-  { id:"space-shower-tv", titulo:"Space Shower TV", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://upload.wikimedia.org/wikipedia/commons/0/05/SPACE_SHOWER_TV.jpg", video:"https://ca01.utako.moe/spaceshower/index.m3u8" },
-  { id:"mtv-japan", titulo:"MTV Japan", tipo:"AoVivo", categoria:"TV Japonesa", poster:"https://www.lyngsat.com/logo/tv/mm/mtv-us.svg", video:"https://ca01.utako.moe/mtv/index.m3u8" },
- 
+   // ── PLUTO TV / ANIMES / FILMES / VARIEDADES ───────────────────────────
+  { id:"acumuladores-obsessivos", titulo:"Acumuladores Obsessivos", tipo:"AoVivo", categoria:"Pluto TV", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Acumuladores", video:"https://jmp2.uk/plu-656e2a4b4261ca00083aa99e.m3u8" },
+
+  { id:"cacadores-de-ovnis", titulo:"Caçadores de Óvnis", tipo:"AoVivo", categoria:"Pluto TV", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Ca%C3%A7adores+de+%C3%93vnis", video:"https://jmp2.uk/plu-656e2a10954b020008ed167c.m3u8" },
+
+  { id:"boruto", titulo:"Boruto: Naruto Next Generations", tipo:"AoVivo", categoria:"Animes ao Vivo", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Boruto", video:"https://jmp2.uk/plu-656f389c3944b60008e5bdab.m3u8" },
+
+  { id:"cocorico", titulo:"Cocoricó", tipo:"AoVivo", categoria:"Infantil", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Cocoric%C3%B3", video:"https://jmp2.uk/plu-62d969fd8451a30007f0fd94.m3u8" },
+
+  { id:"comedy-central-pluto-tv", titulo:"Comedy Central Pluto TV", tipo:"AoVivo", categoria:"Comédia", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Comedy+Central", video:"https://jmp2.uk/plu-5f357e91b18f0b00073583d2.m3u8" },
+
+  { id:"euronews-portuguese", titulo:"Euronews Portuguese", tipo:"AoVivo", categoria:"Notícias", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Euronews", video:"https://jmp2.uk/plu-619e6614c9d9650007a2b171.m3u8" },
+
+  { id:"inuyasha-canal", titulo:"Inuyasha", tipo:"AoVivo", categoria:"Animes ao Vivo", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Inuyasha", video:"https://jmp2.uk/plu-66b26681d2d50d00083abe8b.m3u8" },
+
+  { id:"mais-masterchef-brasil", titulo:"Mais MasterChef Brasil", tipo:"AoVivo", categoria:"Culinária", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Mais+MasterChef", video:"https://jmp2.uk/plu-681111be5e0764e297fb200e.m3u8" },
+
+  { id:"masterchef", titulo:"MasterChef", tipo:"AoVivo", categoria:"Culinária", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=MasterChef", video:"https://jmp2.uk/plu-6077045b6031bd00078de127.m3u8" },
+
+  { id:"jojos-bizarre-adventure", titulo:"JoJo's Bizarre Adventure", tipo:"AoVivo", categoria:"Animes ao Vivo", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=JoJo", video:"https://jmp2.uk/plu-66c7982f6838ee00085f0d24.m3u8" },
+
+  { id:"one-piece-canal", titulo:"One Piece", tipo:"AoVivo", categoria:"Animes ao Vivo", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=One+Piece", video:"https://jmp2.uk/plu-624b1c8d4321e200073ee421.m3u8" },
+
+  { id:"pluto-tv-cine-classicos", titulo:"Pluto TV Cine Clássicos", tipo:"AoVivo", categoria:"Filmes", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Cine+Cl%C3%A1ssicos", video:"https://jmp2.uk/plu-5fa1612a669ba0000702017b.m3u8" },
+
+  { id:"pluto-tv-cine-drama", titulo:"Pluto TV Cine Drama", tipo:"AoVivo", categoria:"Filmes", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Cine+Drama", video:"https://jmp2.uk/plu-5f1210d14ae1f80007bafb1d.m3u8" },
+
+  { id:"pluto-tv-esportes", titulo:"Pluto TV Esportes", tipo:"AoVivo", categoria:"Esportes", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Esportes", video:"https://jmp2.uk/plu-5f32d2db0af67400077f29c4.m3u8" },
+
+  { id:"pluto-tv-filmes-de-luta", titulo:"Pluto TV Filmes de Luta", tipo:"AoVivo", categoria:"Filmes", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Filmes+de+Luta", video:"https://jmp2.uk/plu-6806d62369aec5b19cd628c0.m3u8" },
+
+  { id:"pluto-tv-kids", titulo:"Pluto TV Kids", tipo:"AoVivo", categoria:"Infantil", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Pluto+Kids", video:"https://jmp2.uk/plu-5f1214a637c6fd00079c652f.m3u8" },
+
+  { id:"pluto-tv-kids-club", titulo:"Pluto TV Kids Club", tipo:"AoVivo", categoria:"Infantil", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Kids+Club", video:"https://jmp2.uk/plu-66c8cae7fed35b0008580ec0.m3u8" },
+
+  { id:"pluto-tv-negocio-fechado", titulo:"Pluto TV Negócio Fechado", tipo:"AoVivo", categoria:"Variedades", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Neg%C3%B3cio+Fechado", video:"https://jmp2.uk/plu-64ad7394798def00087b2bfe.m3u8" },
+
+  { id:"pluto-tv-record-news", titulo:"Pluto TV Record News", tipo:"AoVivo", categoria:"Notícias", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Record+News", video:"https://jmp2.uk/plu-6102e04e9ab1db0007a980a1.m3u8" },
+
+  { id:"pokemon", titulo:"Pokémon", tipo:"AoVivo", categoria:"Animes ao Vivo", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Pok%C3%A9mon", video:"https://jmp2.uk/plu-687007a8ee4155e89a8f6d67.m3u8" },
+
+  { id:"super-onze", titulo:"Super Onze", tipo:"AoVivo", categoria:"Animes ao Vivo", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Super+Onze", video:"https://jmp2.uk/plu-63988c2750108d00072e2686.m3u8" },
+
+  { id:"yu-gi-oh", titulo:"Yu-Gi-Oh", tipo:"AoVivo", categoria:"Animes ao Vivo", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Yu-Gi-Oh", video:"https://jmp2.uk/plu-63988a50be012600070f5db3.m3u8" },
+
+  { id:"pluto-tv-novelas", titulo:"Pluto TV Novelas", tipo:"AoVivo", categoria:"Novelas", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Novelas", video:"https://jmp2.uk/plu-5f512365abe1f50007d3ff56.m3u8" },
+
+  { id:"pluto-tv-netmovies", titulo:"Pluto TV Netmovies", tipo:"AoVivo", categoria:"Filmes", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Netmovies", video:"https://jmp2.uk/plu-663b9de4f999220008230fa8.m3u8" },
+
+  { id:"pfl-mma", titulo:"PFL MMA", tipo:"AoVivo", categoria:"Esportes", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=PFL+MMA", video:"https://jmp2.uk/plu-64f6180130ab3300083d896b.m3u8" },
+
+  { id:"os-padrinhos-magicos", titulo:"Os Padrinhos Mágicos", tipo:"AoVivo", categoria:"Infantil", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Padrinhos+M%C3%A1gicos", video:"https://jmp2.uk/plu-63221e41af69b500076f84e7.m3u8" },
+
+  { id:"os-arquivos-do-fbi", titulo:"Os Arquivos do FBI", tipo:"AoVivo", categoria:"Documentários", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Arquivos+do+FBI", video:"https://jmp2.uk/plu-620d12a82e8ac50007c269c3.m3u8" },
+
+  { id:"hunter-x-hunter", titulo:"Hunter x Hunter", tipo:"AoVivo", categoria:"Animes ao Vivo", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Hunter+x+Hunter", video:"https://jmp2.uk/plu-65d9167818036500080e8780.m3u8" },
+
+  { id:"beyblade", titulo:"Beyblade", tipo:"AoVivo", categoria:"Animes ao Vivo", poster:"https://via.placeholder.com/300x450/141414/ffffff?text=Beyblade", video:"https://jmp2.uk/plu-633dc392e0282400071b0d39.m3u8" },
 ];
 
 
