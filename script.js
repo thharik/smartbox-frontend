@@ -68,11 +68,13 @@ async function apiFetch(path, opts = {}) {
       return null;
     }
 
-    if (r.status === 402) {
-      console.warn("402 - Sem assinatura");
-      window.location.href = "login.html?sem_assinatura=1";
-      return null;
-    }
+    // TEMPORÁRIO: redirecionamento por falta de assinatura desativado
+    // enquanto o bloqueio está aberto. Descomente para reativar.
+    // if (r.status === 402) {
+    //   console.warn("402 - Sem assinatura");
+    //   window.location.href = "login.html?sem_assinatura=1";
+    //   return null;
+    // }
 
     if (r.status === 403) {
       console.warn("403 - Sem permissão:", path);
