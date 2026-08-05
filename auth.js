@@ -13,6 +13,13 @@ const API = "https://smartbox-backend.onrender.com";
 // especificações + pagamento (planos.html), sem passar pelo catálogo
 // primeiro (evita o "vai pro index e volta com erro 402").
 async function irParaDestinoCerto(token) {
+  // TEMPORÁRIO: checagem de assinatura desativada — sempre entra direto
+  // no index.html, independente de ter assinatura ativa ou não.
+  // Para reativar, descomente o bloco original abaixo e remova a linha
+  // "window.location.href = "index.html";" logo acima dele.
+  window.location.href = "index.html";
+  return;
+
   try {
     const r = await fetch(`${API}/assinatura/status`, {
       headers: { "Authorization": "Bearer " + token },
